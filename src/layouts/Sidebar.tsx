@@ -35,7 +35,12 @@ export function Sidebar() {
             <span className="text-white-75">{title}</span>
           </a>
           <div className="d-lg-none">
-            <JsLink className="text-white ml-2" data-toggle="layout" data-action="sidebar_close" onClick={() => toggleNav()}>
+            <JsLink
+              className="text-white ml-2"
+              data-toggle="layout"
+              data-action="sidebar_close"
+              onClick={() => toggleNav()}
+            >
               <i className="fa fa-times-circle" />
             </JsLink>
           </div>
@@ -51,7 +56,7 @@ export function Sidebar() {
             ) : (
               <li key={entry.href} className="nav-main-item">
                 <a
-                  className={`nav-main-link${pathname === entry.href ? ' active' : ''}`}
+                  className={`nav-main-link${pathname === entry.href || pathname.startsWith(`${entry.href}/`) ? ' active' : ''}`}
                   onClick={() => {
                     navigate(entry.href)
                     toggleNav(false)

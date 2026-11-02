@@ -1,6 +1,6 @@
 // 请求层：行为与原版 umi.js（模块 t3Un）保持一致，便于新旧版请求逐字节比对。
 //   - 请求头只带 authorization（裸 JWT，无 Bearer），后端 CORS 只放行少数头，不要加自定义头
-//   - POST 默认 form-urlencoded（PHP 方括号语法），json=true 时发 JSON（仅节点排序使用）
+//   - POST 默认 form-urlencoded（PHP 方括号语法），json=true 时发 JSON（节点排序、动态限速等）
 //   - 仅当 content-type 恰为 application/json 时解析 JSON，否则按 ArrayBuffer 返回（CSV 导出）
 //   - 403：清除 token 并回到登录页；其他非 200：弹出"请求失败"
 import { apiBase } from '@/app/settings'

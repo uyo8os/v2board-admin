@@ -1,7 +1,5 @@
 // 侧边栏菜单（顺序、文案、Simple Line Icons 图标与原版一致）
-export type MenuEntry =
-  | { type: 'heading'; title: string }
-  | { type: 'item'; title: string; href: string; icon: string }
+export type MenuEntry = { type: 'heading'; title: string } | { type: 'item'; title: string; href: string; icon: string }
 
 export const MENU: MenuEntry[] = [
   { type: 'item', title: '仪表盘', href: '/dashboard', icon: 'si-speedometer' },
@@ -13,6 +11,7 @@ export const MENU: MenuEntry[] = [
   { type: 'item', title: '节点管理', href: '/server/manage', icon: 'si-layers' },
   { type: 'item', title: '权限组管理', href: '/server/group', icon: 'si-wrench' },
   { type: 'item', title: '路由管理', href: '/server/route', icon: 'si-shuffle' },
+  { type: 'item', title: '动态限速', href: '/server/speedlimit', icon: 'si-speedometer' },
   { type: 'heading', title: '财务' },
   { type: 'item', title: '订阅管理', href: '/plan', icon: 'si-bag' },
   { type: 'item', title: '订单管理', href: '/order', icon: 'si-list' },

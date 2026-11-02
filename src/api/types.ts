@@ -259,6 +259,62 @@ export interface ServerNode {
   [key: string]: unknown
 }
 
+/** 动态限速的开关兼容旧版数字和模型转换后的布尔值。时间为秒，流量为字节。 */
+export type SpeedLimitFlag = boolean | number | string
+export interface SpeedLimitNode {
+  type: string
+  id: number
+}
+
+export interface SpeedLimitPayload {
+  id?: number
+  name: string
+  node_ids: SpeedLimitNode[]
+  plan_limit_enabled: number
+  plan_ids: number[]
+  daily_enabled: number
+  trigger_period?: number
+  threshold: number
+  speed_limit: number
+  limit_duration?: number
+  disconnect_existing_connections: number
+}
+
+export interface SpeedLimitRule extends Omit<
+  SpeedLimitPayload,
+  'plan_limit_enabled' | 'daily_enabled' | 'disconnect_existing_connections'
+> {
+  id: number
+  enable: SpeedLimitFlag
+  plan_limit_enabled: SpeedLimitFlag
+  daily_enabled: SpeedLimitFlag
+  disconnect_existing_connections: SpeedLimitFlag
+}
+
+export interface SpeedLimitNodeTraffic extends SpeedLimitNode {
+  name?: string
+  u: number
+  d: number
+  rate?: number
+  total?: number
+}
+
+export interface SpeedLimitRecord {
+  id: number
+  user_id: number
+  email: string
+  triggered_at: number
+  release_at: number
+  released_at: number | null
+  release_type: string | null
+  u: number
+  d: number
+  total: number
+  threshold: number
+  speed_limit: number
+  node_traffic: SpeedLimitNodeTraffic[]
+}
+
 /** 过滤器条件（原版过滤器抽屉 hVla；用户 / 订单列表的 filter 参数，后端按 key、condition、value 拼查询） */
 export interface FilterCondition {
   key: string
