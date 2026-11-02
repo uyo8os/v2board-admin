@@ -152,6 +152,16 @@ export default function DashboardPage() {
                     {stat.day_register_total ? stat.day_register_total : '0'}
                   </div>
                 </div>
+                <div className="pr-4 pr-sm-5 pl-0 pl-sm-3 ">
+                  <i className="fa fa-money-bill fa-2x text-gray-light float-right" />
+                  <div className="text-muted mb-1" style={{ width: '120px' }}>
+                    本月新增收入
+                  </div>
+                  <div className="display-4 text-black font-w300 mb-2">
+                    {((stat.month_new_user_income ?? 0) / 100).toFixed(2)}
+                    <span className="font-size-h5 font-w600 text-muted">{currency}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -183,6 +193,18 @@ export default function DashboardPage() {
                 <div className="px-4 px-sm-5 border-start">
                   <p className="fs-3 text-dark mb-0">{stat.month_register_total || '-'}</p>
                   <p className="text-muted mb-0">本月新增用户</p>
+                </div>
+                <div className="px-4 px-sm-5 border-start">
+                  <p className="fs-3 text-dark mb-0">{stat.total_user ?? '0'}</p>
+                  <p className="text-muted mb-0">总用户</p>
+                </div>
+                <div className="px-4 px-sm-5 border-start">
+                  <p className="fs-3 text-dark mb-0">{stat.paid_user_total ?? '0'}</p>
+                  <p className="text-muted mb-0">累计付费用户</p>
+                </div>
+                <div className="px-4 px-sm-5 border-start">
+                  <p className="fs-3 text-dark mb-0">{stat.paid_user_active ?? '0'}</p>
+                  <p className="text-muted mb-0">有效付费用户</p>
                 </div>
               </div>
             </div>

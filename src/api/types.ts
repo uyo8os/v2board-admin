@@ -20,7 +20,11 @@ export interface UserInfo {
 
 export interface StatOverride {
   online_user?: number
+  total_user?: number
+  paid_user_total?: string
+  paid_user_active?: string
   month_income?: number
+  month_new_user_income?: number
   month_register_total?: number
   day_register_total?: number
   ticket_pending_total?: number
