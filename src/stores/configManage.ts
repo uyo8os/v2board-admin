@@ -1,5 +1,5 @@
 // 系统配置（原版 dva model config，模块 6lKK）：与原版一样是全局状态，离开页面不重置（再次进入时先显示上次读取的内容）。
-//   - fetch：读取全部分组，提现方式、充值奖励为逗号分隔的字符串时拆成数组
+//   - fetch：读取全部分组，提现方式、充值奖励、预设金额、图片类型为逗号分隔的字符串时拆成数组
 //   - setValue：修改字段后 1.5 秒自动保存该分组的全部字段；保存成功提示「保存成功」并重新读取（不等待）。
 //     有意修正：原版所有分组共用一个定时器，1.5 秒内又改了另一个分组时只保存后一个分组，前一个分组的修改丢失；
 //     新版按分组各自计时（同一分组内连续修改仍合并成一次保存），重新读取时跳过还在等待保存或正在保存的分组
@@ -22,17 +22,7 @@ import { showTestMailResult } from '@/pages/config/testMailResult'
 
 /** 配置分组（与后端 config/fetch 的分组一致） */
 export type ConfigGroup =
-  | 'ticket'
-  | 'deposit'
-  | 'invite'
-  | 'site'
-  | 'subscribe'
-  | 'frontend'
-  | 'server'
-  | 'email'
-  | 'telegram'
-  | 'app'
-  | 'safe'
+  'ticket' | 'deposit' | 'invite' | 'site' | 'subscribe' | 'frontend' | 'server' | 'email' | 'telegram' | 'app' | 'safe'
 
 export type ConfigValues = Record<string, unknown>
 
@@ -101,6 +91,8 @@ export const useConfigManageStore = create<ConfigManageState>((set, get) => ({
     // 与原版一致在 site 分组里找白名单后缀（后端实际放在 safe 分组，且本来就是数组，这一步不起作用）
     splitIfString(data.site, 'email_whitelist_suffix')
     splitIfString(data.deposit, 'deposit_bounus')
+    splitIfString(data.deposit, 'deposit_preset_amounts')
+    splitIfString(data.ticket, 'ticket_image_upload_allowed_types')
     const groups = Object.fromEntries(
       Object.entries(data).filter(([group]) => !hasPendingChanges(group as ConfigGroup)),
     )

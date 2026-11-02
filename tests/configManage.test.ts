@@ -7,7 +7,8 @@ const fetchConfig = vi.fn(async (_key?: string) => ({
     site: { app_name: 'V2Board', currency: 'CNY' },
     safe: { email_verify: 0 },
     invite: { commission_withdraw_method: '支付宝,USDT' },
-    deposit: { deposit_bounus: '50:18,100:38' },
+    deposit: { deposit_bounus: '50:18,100:38', deposit_preset_amounts: '10,50.5,100' },
+    ticket: { ticket_image_upload_allowed_types: 'image/jpeg,image/png' },
   },
 }))
 const setTelegramWebhook = vi.fn(async (_token: string) => ({ code: 200 }))
@@ -33,6 +34,11 @@ describe('系统配置：修改后按分组自动保存', () => {
   it('读取时把逗号分隔的提现方式、充值奖励拆成数组', () => {
     expect(store().invite.commission_withdraw_method).toEqual(['支付宝', 'USDT'])
     expect(store().deposit.deposit_bounus).toEqual(['50:18', '100:38'])
+  })
+
+  it('兼容以字符串返回的充值预设金额与图片 MIME 类型', () => {
+    expect(store().deposit.deposit_preset_amounts).toEqual(['10', '50.5', '100'])
+    expect(store().ticket.ticket_image_upload_allowed_types).toEqual(['image/jpeg', 'image/png'])
   })
 
   it('同一分组连续修改只保存一次，提交该分组的全部字段', async () => {
@@ -103,5 +109,21 @@ describe('系统配置：修改后按分组自动保存', () => {
     await store().setTelegramWebhook()
     expect(setTelegramWebhook).not.toHaveBeenCalled()
     expect(store().setTelegramWebhookLoading).toBe(false)
+  })
+
+  it('立即设置 Webhook 前，先保存新通信域名与绑定开关', async () => {
+    useConfigManageStore.setState({ telegram: { telegram_bot_token: '123:current', telegram_show_bind: 1 } })
+    store().setValue('telegram', 'telegram_webhook_domain', 'https://telegram.example.com')
+    store().setValue('telegram', 'telegram_show_bind', 0)
+    await store().setTelegramWebhook()
+    expect(saveConfig).toHaveBeenCalledWith({
+      telegram_bot_token: '123:current',
+      telegram_show_bind: 0,
+      telegram_webhook_domain: 'https://telegram.example.com',
+    })
+    expect(setTelegramWebhook).toHaveBeenCalledWith('123:current')
+    expect(saveConfig.mock.invocationCallOrder.at(-1)).toBeLessThan(setTelegramWebhook.mock.invocationCallOrder.at(-1)!)
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY)
+    expect(saveConfig).toHaveBeenCalledTimes(1)
   })
 })

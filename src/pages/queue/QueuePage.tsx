@@ -13,10 +13,11 @@ const QUEUE_NAME: Record<string, string> = {
   send_telegram: 'Telegram消息队列',
   stat: '统计队列',
   traffic_fetch: '流量消费队列',
+  speed_limit: '动态限速队列',
 }
 
 const columns: TableColumnsType<QueueWorkload> = [
-  { title: '队列名称', dataIndex: 'name', key: 'name', render: (name: string) => QUEUE_NAME[name] },
+  { title: '队列名称', dataIndex: 'name', key: 'name', render: (name: string) => QUEUE_NAME[name] ?? name },
   { title: '作业量', dataIndex: 'processes', key: 'processes' },
   { title: '任务量', dataIndex: 'length', key: 'length' },
   { title: '占用时间', dataIndex: 'wait', key: 'wait', align: 'right', render: (wait: number) => `${wait}s` },

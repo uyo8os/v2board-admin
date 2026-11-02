@@ -1,4 +1,4 @@
-import { Button, Input, Switch } from 'antd'
+import { Button, Input, InputNumber, Switch } from 'antd'
 import { useEffect, type InputHTMLAttributes, type ReactNode } from 'react'
 import { usePlans } from '@/api/queries'
 import { V2Tabs } from '@/components/V2Tabs'
@@ -32,6 +32,7 @@ function ConfigItem({ title, description, isChildren, children }: ConfigItemProp
 
 /** 分组里的值原样交给输入框（数字、逗号拼接的数组都由 React 转成文本） */
 const text = (value: unknown) => value as InputHTMLAttributes<HTMLInputElement>['defaultValue']
+const inputValue = (value: unknown) => (Array.isArray(value) ? value.join(',') : String(value ?? ''))
 /** 与原版 parseInt(x) 的真假一致：1 / '1' 为开，0、空值为关 */
 const on = (value: unknown) => Boolean(Number.parseInt(String(value), 10))
 /** 下拉框的值（还没读取到时为空，显示第一个选项） */
@@ -93,6 +94,27 @@ export default function SystemConfigPage() {
       onChange={(e) => set(group, key)(e.target.value)}
     />
   )
+  // 新增设置用受控输入，异步读取和切换标签后保持同步；节点通信地址在两个标签里共用同一字段。
+  const configInput = (group: ConfigGroup, key: string, placeholder: string, type = 'text') => (
+    <input
+      name={key}
+      type={type}
+      className="form-control"
+      placeholder={placeholder}
+      value={inputValue(config[group][key])}
+      onChange={(e) => set(group, key)(e.target.value)}
+    />
+  )
+  const listInput = (group: ConfigGroup, key: string, placeholder: string) => (
+    <input
+      name={key}
+      type="text"
+      className="form-control"
+      placeholder={placeholder}
+      value={inputValue(config[group][key])}
+      onChange={(e) => set(group, key)(e.target.value.split(','))}
+    />
+  )
   const textarea = (group: ConfigGroup, key: string, placeholder: string, rows: string, split = false) => (
     <textarea
       rows={Number(rows)}
@@ -104,8 +126,12 @@ export default function SystemConfigPage() {
       onChange={(e) => set(group, key)(split ? e.target.value.split(',') : e.target.value)}
     />
   )
-  const toggle = (group: ConfigGroup, key: string) => (
-    <Switch checked={on(config[group][key])} onChange={(checked) => set(group, key)(checked ? 1 : 0)} />
+  const toggle = (group: ConfigGroup, key: string, fallback = 0) => (
+    <Switch
+      id={key}
+      checked={on(config[group][key] ?? fallback)}
+      onChange={(checked) => set(group, key)(checked ? 1 : 0)}
+    />
   )
   const select = (group: ConfigGroup, key: string, options: Array<[number, string]>, placeholder?: string) => (
     <select
@@ -149,6 +175,12 @@ export default function SystemConfigPage() {
           <ConfigItem title="强制HTTPS" description="当站点没有使用HTTPS，CDN或反代开启强制HTTPS时需要开启。">
             {toggle('site', 'force_https')}
           </ConfigItem>
+          <ConfigItem
+            title="节点通信地址"
+            description="节点与面板通信使用的地址，留空则使用站点网址。与「节点」标签中的对接 API 地址同步。"
+          >
+            {configInput('server', 'server_api_url', '请输入节点通信地址')}
+          </ConfigItem>
           <ConfigItem title="LOGO" description="用于显示需要LOGO的地方。">
             {input('site', 'logo', '请输入LOGO URL，末尾不要/')}
           </ConfigItem>
@@ -157,6 +189,9 @@ export default function SystemConfigPage() {
             description="用于订阅所使用，留空则为站点URL。如需多个订阅URL随机获取请使用逗号进行分割。"
           >
             {textarea('site', 'subscribe_url', '请输入订阅URL，末尾不要/。逗号分割支持多域名', '4')}
+          </ConfigItem>
+          <ConfigItem title="备用订阅URL" description="为用户提供备用订阅地址，留空则不显示。">
+            {configInput('site', 'subscribe_url_backup', 'https://backup.example.com', 'url')}
           </ConfigItem>
           <ConfigItem
             title="订阅路径"
@@ -204,6 +239,9 @@ export default function SystemConfigPage() {
           <ConfigItem title="禁止使用Gmail多别名" description="开启后Gmail多别名将无法注册。">
             {toggle('safe', 'email_gmail_limit_enable')}
           </ConfigItem>
+          <ConfigItem title="qq.com邮箱只允许纯数字" description="开启后，使用 qq.com 注册时邮箱前缀只允许纯数字。">
+            {toggle('safe', 'email_qq_numeric_only')}
+          </ConfigItem>
           <ConfigItem title="安全模式" description="开启后除了站点URL以外的绑定本站点的域名访问都将会被403。">
             {toggle('safe', 'safe_mode_enable')}
           </ConfigItem>
@@ -220,21 +258,12 @@ export default function SystemConfigPage() {
           ) : (
             ''
           )}
-          <ConfigItem title="防机器人" description="开启后将会使用Google reCAPTCHA防止机器人。">
+          <ConfigItem title="人机验证" description="开启后使用本地图片验证码防止机器人。">
             {toggle('safe', 'recaptcha_enable')}
           </ConfigItem>
-          {safe.recaptcha_enable ? (
-            <>
-              <ConfigItem isChildren title="密钥" description="在Google reCAPTCHA申请的密钥。">
-                {input('safe', 'recaptcha_key', '请输入')}
-              </ConfigItem>
-              <ConfigItem isChildren title="网站密钥" description="在Google reCAPTCH申请的网站密钥。">
-                {input('safe', 'recaptcha_site_key', '请输入')}
-              </ConfigItem>
-            </>
-          ) : (
-            ''
-          )}
+          <ConfigItem title="登录人机验证" description="开启后，用户前端登录时需要完成本地图片验证码。">
+            {toggle('safe', 'login_captcha_enable')}
+          </ConfigItem>
           <ConfigItem
             title="IP注册限制"
             description="开启后如果IP注册账户达到规则要求将会被限制注册，请注意IP判断可能因为CDN或前置代理导致问题。"
@@ -268,6 +297,9 @@ export default function SystemConfigPage() {
           ) : (
             ''
           )}
+          <ConfigItem title="前端登录设备显示" description="开启后，将在用户前端显示登录设备记录。">
+            {toggle('safe', 'show_active_sessions')}
+          </ConfigItem>
         </div>
       ),
     },
@@ -296,10 +328,7 @@ export default function SystemConfigPage() {
               '请选择订阅重置方式',
             )}
           </ConfigItem>
-          <ConfigItem
-            title="开启折抵方案"
-            description="开启后用户更换订阅将会由系统对原有订阅进行折抵，方案参考文档。"
-          >
+          <ConfigItem title="开启折抵方案" description="开启后用户更换订阅将会由系统对原有订阅进行折抵，方案参考文档。">
             {toggle('subscribe', 'surplus_enable')}
           </ConfigItem>
           <ConfigItem
@@ -354,6 +383,16 @@ export default function SystemConfigPage() {
       label: '充值',
       children: (
         <div className="">
+          <ConfigItem title="充值开关" description="关闭后，用户前端将禁用账户充值页面。">
+            {toggle('deposit', 'deposit_enable', 1)}
+          </ConfigItem>
+          <ConfigItem
+            isChildren
+            title="充值预设金额"
+            description="使用逗号分隔，单位为元，最多两位小数；每项须大于等于 1 且小于 99999.99。留空则不显示预设金额。"
+          >
+            {listInput('deposit', 'deposit_preset_amounts', '例如：10,50,100')}
+          </ConfigItem>
           <ConfigItem title="充值奖励" description="充值一定金额可以获得的奖励。">
             {textarea(
               'deposit',
@@ -382,6 +421,61 @@ export default function SystemConfigPage() {
               <option value={2}>完全禁止工单</option>
             </select>
           </ConfigItem>
+          <ConfigItem
+            title="开启工单图片上传"
+            description="开启后，用户可在新建工单时上传图片，由面板转发到配置的图床。"
+          >
+            {toggle('ticket', 'ticket_image_upload_enable')}
+          </ConfigItem>
+          {on(ticket.ticket_image_upload_enable) && (
+            <>
+              <ConfigItem
+                isChildren
+                title="图床 API URL"
+                description="填写支持 EasyImages 2.0 上传格式的 HTTPS 公网地址。"
+              >
+                {configInput(
+                  'ticket',
+                  'ticket_image_upload_api_url',
+                  'https://images.example.com/api/index.php',
+                  'url',
+                )}
+              </ConfigItem>
+              <ConfigItem isChildren title="图床 Token" description="图床提供的上传 Token，可留空。">
+                {configInput('ticket', 'ticket_image_upload_token', '请输入图床 Token（可选）', 'password')}
+              </ConfigItem>
+              <ConfigItem
+                isChildren
+                title="最大文件大小（字节）"
+                description="单张图片的大小上限，默认 5242880 字节（5 MB）。"
+              >
+                <InputNumber
+                  id="ticket_image_upload_max_file_size"
+                  defaultValue={Number(ticket.ticket_image_upload_max_file_size ?? 5242880)}
+                  min={1}
+                  precision={0}
+                  style={{ width: '100%' }}
+                  onChange={(value) => {
+                    if (value !== null && value >= 1) set('ticket', 'ticket_image_upload_max_file_size')(value)
+                  }}
+                />
+              </ConfigItem>
+              <ConfigItem
+                isChildren
+                title="允许的图片类型"
+                description="使用逗号分隔 MIME 类型，如 image/jpeg,image/png,image/gif,image/webp；留空恢复默认类型。"
+              >
+                {listInput('ticket', 'ticket_image_upload_allowed_types', 'image/jpeg,image/png,image/gif,image/webp')}
+              </ConfigItem>
+              <ConfigItem
+                isChildren
+                title="图片地址响应字段"
+                description="图床返回的图片 URL 字段，支持 data.url 这样的路径，留空使用 url。"
+              >
+                {configInput('ticket', 'ticket_image_upload_response_field', 'url')}
+              </ConfigItem>
+            </>
+          )}
         </div>
       ),
     },
@@ -393,10 +487,7 @@ export default function SystemConfigPage() {
           <ConfigItem title="开启强制邀请" description="开启后只有被邀请的用户才可以进行注册。">
             {toggle('invite', 'invite_force')}
           </ConfigItem>
-          <ConfigItem
-            title="邀请佣金百分比"
-            description="默认全局的佣金分配比例，你可以在用户管理单独配置单个比例。"
-          >
+          <ConfigItem title="邀请佣金百分比" description="默认全局的佣金分配比例，你可以在用户管理单独配置单个比例。">
             <input
               type="text"
               className="form-control"
@@ -436,15 +527,18 @@ export default function SystemConfigPage() {
             {input('invite', 'commission_withdraw_limit', '请输入')}
           </ConfigItem>
           <ConfigItem title="提现方式" description="可以支持的提现方式。">
-            {textarea('invite', 'commission_withdraw_method', '请输入后缀域名，逗号分割 如：支付宝,USDT,贝宝', '4', true)}
+            {textarea(
+              'invite',
+              'commission_withdraw_method',
+              '请输入后缀域名，逗号分割 如：支付宝,USDT,贝宝',
+              '4',
+              true,
+            )}
           </ConfigItem>
           <ConfigItem title="关闭提现" description="关闭后将禁止用户申请提现，且邀请佣金将会直接进入用户余额。">
             {toggle('invite', 'withdraw_close_enable')}
           </ConfigItem>
-          <ConfigItem
-            title="三级分销"
-            description="开启后将佣金将按照设置的3成比例进行分成，三成比例合计请不要>100%。"
-          >
+          <ConfigItem title="三级分销" description="开启后将佣金将按照设置的3成比例进行分成，三成比例合计请不要>100%。">
             {toggle('invite', 'commission_distribution_enable')}
           </ConfigItem>
           {on(invite.commission_distribution_enable) ? (
@@ -517,7 +611,7 @@ export default function SystemConfigPage() {
         <>
           <div className="">
             <ConfigItem title="节点对接API地址" description="v2node节点一键对接专用地址。">
-              {input('server', 'server_api_url', '请输入')}
+              {configInput('server', 'server_api_url', '请输入节点通信地址')}
             </ConfigItem>
           </div>
           <div className="">
@@ -609,6 +703,12 @@ export default function SystemConfigPage() {
       label: 'Telegram',
       children: (
         <div className="">
+          <ConfigItem
+            title="Telegram通信域名"
+            description="Telegram Webhook 使用的 HTTPS 通信域名，留空则使用站点网址。修改后需重新设置 Webhook。"
+          >
+            {configInput('telegram', 'telegram_webhook_domain', 'https://api.example.com', 'url')}
+          </ConfigItem>
           <ConfigItem title="机器人Token" description="请输入由Botfather提供的token。">
             {input('telegram', 'telegram_bot_token', '0000000000:xxxxxxxxx_xxxxxxxxxxxxxxx')}
           </ConfigItem>
@@ -626,6 +726,9 @@ export default function SystemConfigPage() {
           )}
           <ConfigItem title="开启机器人通知" description="开启后bot将会对绑定了telegram的管理员和用户进行基础通知。">
             {toggle('telegram', 'telegram_bot_enable')}
+          </ConfigItem>
+          <ConfigItem title="显示绑定功能" description="是否在用户中心显示绑定 Telegram 的入口。">
+            {toggle('telegram', 'telegram_show_bind', 1)}
           </ConfigItem>
           <ConfigItem title="群组地址" description="填写后将会在用户端展示，或者被用于需要的地方。">
             {input('telegram', 'telegram_discuss_link', 'https://t.me/xxxxxx')}
