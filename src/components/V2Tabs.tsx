@@ -23,26 +23,34 @@ export interface V2TabItem {
 
 interface V2TabsProps {
   items: V2TabItem[]
+  /** 受控标签，供列表跳到用户详情等跨标签操作使用；不传时保持原有内部状态。 */
+  activeKey?: string
   defaultActiveKey?: string
   size?: 'large'
   onChange?: (key: string) => void
 }
 
-export function V2Tabs({ items, defaultActiveKey, size, onChange }: V2TabsProps) {
-  const [activeKey, setActiveKey] = useState(() => defaultActiveKey ?? items[0]?.key ?? '')
+export function V2Tabs({ items, activeKey: controlledKey, defaultActiveKey, size, onChange }: V2TabsProps) {
+  const [innerKey, setInnerKey] = useState(() => controlledKey ?? defaultActiveKey ?? items[0]?.key ?? '')
+  const activeKey = controlledKey ?? innerKey
   const [visited, setVisited] = useState(() => new Set([activeKey]))
+  // 父组件可直接切换；访问过的内容仍保持挂载。
+  if (!visited.has(activeKey)) setVisited(new Set(visited).add(activeKey))
   const activeIndex = items.findIndex((item) => item.key === activeKey)
 
   const select = (key: string) => {
     if (key === activeKey) return
-    setVisited((keys) => new Set(keys).add(key))
-    setActiveKey(key)
+    if (controlledKey === undefined) {
+      setVisited((keys) => new Set(keys).add(key))
+      setInnerKey(key)
+    }
     onChange?.(key)
   }
 
   // 与 rc-tabs 9 一致：→ / ↓ 选下一个，← / ↑ 选上一个，首尾循环
   const onKeyDown = (e: KeyboardEvent) => {
-    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+    const step =
+      e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
     if (!step) return
     e.preventDefault()
     select(items[(activeIndex + step + items.length) % items.length].key)
@@ -62,6 +70,7 @@ export function V2Tabs({ items, defaultActiveKey, size, onChange }: V2TabsProps)
               key={item.key}
               role="tabpanel"
               aria-hidden={active ? 'false' : 'true'}
+              inert={!active}
               className={`ant-tabs-tabpane ant-tabs-tabpane-${active ? 'active' : 'inactive'}`}
             >
               {visited.has(item.key) && item.children}
@@ -169,7 +178,8 @@ function TabBar({ items, activeKey, large, onTabClick, onKeyDown }: TabBarProps)
     const wrapLeft = navWrap.getBoundingClientRect().left
     const tabLeft = tab.getBoundingClientRect().left
     if (wrapLeft > tabLeft) setOffset(offset.current + (wrapLeft - tabLeft))
-    else if (wrapLeft + wrapWidth < tabLeft + tabWidth) setOffset(offset.current - (tabLeft + tabWidth - (wrapLeft + wrapWidth)))
+    else if (wrapLeft + wrapWidth < tabLeft + tabWidth)
+      setOffset(offset.current - (tabLeft + tabWidth - (wrapLeft + wrapWidth)))
   }
 
   /** 墨条：位置、宽度与选中的标签相同（hide：先隐藏再显示，挂载时不播放从 0 开始的动画） */

@@ -19,6 +19,7 @@ export const MENU: MenuEntry[] = [
   { type: 'item', title: '礼品卡管理', href: '/giftcard', icon: 'si-star' },
   { type: 'heading', title: '用户' },
   { type: 'item', title: '用户管理', href: '/user', icon: 'si-users' },
+  { type: 'item', title: '风控中心', href: '/insiderGuard', icon: 'si-shield' },
   { type: 'item', title: '公告管理', href: '/notice', icon: 'si-speech' },
   { type: 'item', title: '工单管理', href: '/ticket', icon: 'si-support' },
   { type: 'item', title: '知识库管理', href: '/knowledge', icon: 'si-bulb' },
