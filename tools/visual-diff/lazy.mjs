@@ -3,7 +3,7 @@
 // 暗黑模式在首次渲染前生效且可以切换；--target prod 时再模拟页面文件下载失败（重新部署后旧文件被删除），
 // 应自动刷新并打开要去的页面。
 // 用法：node tools/visual-diff/lazy.mjs [--target new|prod]
-//   new = pnpm dev（5173）；prod = 打包产物（pnpm build 后 pnpm preview，4173，或 V2B_PROD 指定的地址）
+//   new = npm run dev（5173）；prod = 打包产物（npm run build 后 npm run preview，4173，或 V2B_PROD 指定的地址）
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'

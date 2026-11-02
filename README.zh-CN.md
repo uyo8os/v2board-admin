@@ -11,7 +11,7 @@
 [![许可证：MIT + Commons Clause](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-3DA639.svg?style=flat-square)](LICENSE)
 [![部署：Cloudflare Workers](https://img.shields.io/badge/deploy-Cloudflare%20Workers-F38020.svg?style=flat-square&logo=cloudflare&logoColor=white)](#一键部署)
 [![后端：wyx2685/v2board](https://img.shields.io/badge/backend-wyx2685%2Fv2board-000000.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/wyx2685/v2board)
-[![工具链：pnpm](https://img.shields.io/badge/toolchain-pnpm-F69220.svg?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![工具链：npm](https://img.shields.io/badge/toolchain-npm-CB3837.svg?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/)
 [![构建：Vite](https://img.shields.io/badge/build-Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
 [![语言：TypeScript](https://img.shields.io/badge/language-TypeScript-3178C6.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
@@ -39,20 +39,14 @@
 
 ## 本地开发
 
-需要 Node ≥ 22.22、pnpm 11，以及一个 V2board 后端。
+需要 Node ≥ 22.22、npm，以及一个 V2board 后端。
 
 ```bash
-pnpm install
+npm install
 cp public/config.example.js config.local.js   # 填写后端地址和后台路径
-pnpm dev                                      # http://localhost:5173
-pnpm build                                    # 构建内容在 dist/
+npm run dev                                      # http://localhost:5173
+npm run build                                    # 构建内容在 dist/
 ```
-
-## 赞助商
-
-| 赞助商 | 介绍 |
-| :---: | --- |
-| <a href="https://t.me/awssb"><img src=".github/sponsors/awssb.png" alt="AWSSB" width="120"></a> | AWS 独享机租用，非日抛：c6in 高配机型，支持自动补机、自动换 IP。Telegram 联系 [@awssb](https://t.me/awssb) |
 
 ## Star History
 

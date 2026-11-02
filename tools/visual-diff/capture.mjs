@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 截图：同一页面 / 状态分别在旧版（后端提供的 umi.js 管理端）与新版（pnpm dev）截取整页图。
+// 截图：同一页面 / 状态分别在旧版（后端提供的 umi.js 管理端）与新版（npm run dev）截取整页图。
 // 用法：node tools/visual-diff/capture.mjs [--target old|new|prod|both] [--viewport desktop|mobile] [--only a,b,prefix*] [--dark]
 //        [--theme <sidebar>,<header>,<color>]   例如 --theme dark,light,black
 //        [--ui illustration|geek]   新版使用的界面预设（lib.mjs 的 UI_PRESETS；没有原版可比，配合 --target new / prod）。

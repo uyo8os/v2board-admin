@@ -5,7 +5,7 @@
 //   .umi-src/routes.json       路由 → 页面模块
 //   .umi-src/models.json       dva model namespace → 模块
 //   .umi-src/packets/<name>.md 每个页面 / model 的移植包（依赖、接口、class 名、中文文案）
-// 用法：pnpm umi:extract [umi.js 路径]（默认读 ../v2b-demo/src 里 wyx2685/v2board 的原版管理端）
+// 用法：npm run umi:extract [umi.js 路径]（默认读 ../v2b-demo/src 里 wyx2685/v2board 的原版管理端）
 import fs from 'node:fs'
 import path from 'node:path'
 

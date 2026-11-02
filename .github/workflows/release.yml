@@ -19,14 +19,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      # pnpm 的版本取 package.json 的 packageManager
-      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+          cache: npm
+      - run: npm ci
+      - run: npm run check
       # 解压后得到 dist/ 目录，文件保留构建时的修改时间；属主记为 root（以 root 解压时不会带上构建机的用户 id）
       - name: Pack dist.tar.gz
         run: |

@@ -5,7 +5,6 @@
   "description": "V2Board 管理端（React 19 + antd 6，前后端分离，像素级还原原版）",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
-  "packageManager": "pnpm@11.10.0",
   "engines": {
     "node": ">=22.22.0"
   },
@@ -17,7 +16,7 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "umi:extract": "node tools/umi-extract/extract.mjs",
     "visual:capture": "node tools/visual-diff/capture.mjs",
     "visual:diff": "node tools/visual-diff/diff.mjs"

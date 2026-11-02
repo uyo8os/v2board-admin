@@ -11,7 +11,7 @@ An open-source V2Board admin frontend based on [wyx2685/v2board](https://github.
 [![License: MIT + Commons Clause](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-3DA639.svg?style=flat-square)](LICENSE)
 [![Deploy: Cloudflare Workers](https://img.shields.io/badge/deploy-Cloudflare%20Workers-F38020.svg?style=flat-square&logo=cloudflare&logoColor=white)](#one-click-deploy)
 [![Backend: wyx2685/v2board](https://img.shields.io/badge/backend-wyx2685%2Fv2board-000000.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/wyx2685/v2board)
-[![pnpm](https://img.shields.io/badge/toolchain-pnpm-F69220.svg?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![npm](https://img.shields.io/badge/toolchain-npm-CB3837.svg?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/)
 [![Vite](https://img.shields.io/badge/build-Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
 [![TypeScript](https://img.shields.io/badge/language-TypeScript-3178C6.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
@@ -39,20 +39,14 @@ You can change them later under the Worker's Settings → Variables and Secrets;
 
 ## Development
 
-Requires Node ≥ 22.22, pnpm 11 and a V2board backend.
+Requires Node ≥ 22.22, npm and a V2board backend.
 
 ```bash
-pnpm install
+npm install
 cp public/config.example.js config.local.js   # set the backend URL and admin path
-pnpm dev                                      # http://localhost:5173
-pnpm build                                    # output goes to dist/
+npm run dev                                      # http://localhost:5173
+npm run build                                    # output goes to dist/
 ```
-
-## Sponsors
-
-| Sponsor | Description |
-| :---: | --- |
-| <a href="https://t.me/awssb"><img src=".github/sponsors/awssb.png" alt="AWSSB" width="120"></a> | Dedicated AWS instances for rent, long-term rather than throwaway: high-spec c6in machines with automatic replacement and IP rotation. Contact [@awssb](https://t.me/awssb) on Telegram. |
 
 ## Star History
 

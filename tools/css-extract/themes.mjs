@@ -5,7 +5,7 @@
 //   - antd 组件着色交给 antd 6 的 token，这里全部跳过
 //   - 保留原文件中的先后顺序（原版主题文件里 Dashmix 段与 antd 段的先后不同，会影响最终颜色）
 //   - 用 :where(html[data-v2b-color=...]) 限定作用域，不增加选择器优先级
-// 用法：node tools/css-extract/themes.mjs（先运行 pnpm umi:extract）
+// 用法：node tools/css-extract/themes.mjs（先运行 npm run umi:extract）
 import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'postcss'

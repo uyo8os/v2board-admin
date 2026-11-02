@@ -13,9 +13,9 @@ export const config = {
   securePath: process.env.V2B_SECURE_PATH ?? 'devadmin123',
   email: process.env.V2B_ADMIN_EMAIL ?? 'admin@example.com',
   password: process.env.V2B_ADMIN_PASSWORD ?? 'admin123456',
-  // 新管理端（pnpm dev）
+  // 新管理端（npm run dev）
   newOrigin: process.env.V2B_NEW ?? 'http://localhost:5173',
-  // 新管理端的打包产物（pnpm build 后 pnpm preview，或同源部署的地址，末尾不带 /）
+  // 新管理端的打包产物（npm run build 后 npm run preview，或同源部署的地址，末尾不带 /）
   prodOrigin: process.env.V2B_PROD ?? 'http://localhost:4173',
 }
 
