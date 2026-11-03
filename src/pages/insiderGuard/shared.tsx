@@ -22,6 +22,9 @@ export const guardKeys = {
   candidates: (incidentId: number) => ['insiderGuard', 'candidates', incidentId] as const,
   timeline: (incidentId: number) => ['insiderGuard', 'timeline', incidentId] as const,
   config: ['config', 'insider_guard'],
+  subscribeAudit: ['insiderGuard', 'subscribeAudit'],
+  subscribeAuditStats: ['insiderGuard', 'subscribeAuditStats'],
+  subscribeAuditDetail: ['insiderGuard', 'subscribeAuditDetail'],
 } as const
 
 /** 用户 ID 输入框的值：只接受纯数字且 ≥ 1，其它返回 undefined */

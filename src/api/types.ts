@@ -580,3 +580,51 @@ export interface GuardTimeline {
   deliveries_total: number
   disclaimer: string
 }
+
+export type SubscribeAuditSource = 'subscription' | 'app'
+export type SubscribeAuditResult = 'success' | 'unavailable' | 'error'
+export type SubscribeAuditDimension = 'ip' | 'ua' | 'user'
+
+/** 逐次订阅审计的平铺筛选，与按小时合并的活动记录独立。时间为 unix 秒。 */
+export interface SubscribeAuditFilter {
+  time_from?: number
+  time_to?: number
+  user_id?: number
+  email?: string
+  ip?: string
+  ua?: string
+  format?: string
+  result?: SubscribeAuditResult
+  source?: SubscribeAuditSource
+  status?: number
+}
+
+export interface SubscribeAuditRecord {
+  id: number
+  user_id: number
+  email: string
+  ip_address: string
+  ua: string
+  source: SubscribeAuditSource
+  format: string
+  result: SubscribeAuditResult
+  status: number
+  duration_ms: number
+  requested_at: number
+}
+
+export interface SubscribeAuditDetail extends SubscribeAuditRecord {
+  request_details: { method: string; path: string; query: Record<string, string>; decoy?: boolean } | null
+  /** 读取详情时生成的当前链接，可能使用临时令牌，不是历史请求地址。 */
+  current_subscribe_url: string | null
+}
+
+export interface SubscribeAuditStats {
+  total: number
+  users: number
+  ips: number
+  uas: number
+  dimension: SubscribeAuditDimension
+  ranking: Array<{ value: string | number; label: string; count: number; last_at: number }>
+  generated_at: number
+}

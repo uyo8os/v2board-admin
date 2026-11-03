@@ -121,6 +121,50 @@ describe('request', () => {
     })
   })
 
+  it('逐次订阅审计三个 GET 保留平铺筛选和分页，只有手动统计请求带 fresh', async () => {
+    store.set('authorization', 'jwt-token')
+    const fetch = mockFetch(200, { data: [], total: 8 })
+    const filters = {
+      time_from: 100,
+      time_to: 200,
+      user_id: 7,
+      email: ' user%_ ',
+      ip: '2001:db8::1',
+      ua: 'Clash Test',
+      format: 'ClashMeta',
+      result: 'success' as const,
+      source: 'app' as const,
+      status: 200,
+    }
+    await guard.fetchSubscribeAudit({ ...filters, current: 2, pageSize: 50 })
+    await guard.fetchSubscribeAuditStats({ ...filters, dimension: 'ua', fresh: 1 })
+    await guard.fetchSubscribeAuditStats({ ...filters, dimension: 'ip' })
+    await guard.fetchSubscribeAuditDetail(9)
+    const queries = fetch.mock.calls.map((call) => {
+      const [target, init] = call as unknown as [string, RequestInit]
+      expect(init.cache).toBe('no-store')
+      expect([...new Headers(init.headers)]).toEqual([['authorization', 'jwt-token']])
+      const url = new URL(target)
+      expect(url.searchParams.has('_ig')).toBe(true)
+      url.searchParams.delete('_ig')
+      return { path: url.pathname, params: Object.fromEntries(url.searchParams) }
+    })
+    const expected = Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, String(value)]))
+    expect(queries[0]).toEqual({
+      path: '/api/v1/devadmin123/insiderGuard/subscribeAudit',
+      params: { ...expected, current: '2', pageSize: '50' },
+    })
+    expect(queries[1]).toEqual({
+      path: '/api/v1/devadmin123/insiderGuard/subscribeAuditStats',
+      params: { ...expected, dimension: 'ua', fresh: '1' },
+    })
+    expect(queries[2]).toEqual({
+      path: '/api/v1/devadmin123/insiderGuard/subscribeAuditStats',
+      params: { ...expected, dimension: 'ip' },
+    })
+    expect(queries[3]).toEqual({ path: '/api/v1/devadmin123/insiderGuard/subscribeAuditDetail', params: { id: '9' } })
+  })
+
   it('POST 默认 form-urlencoded，json=true 时发 JSON', async () => {
     const fetch = mockFetch(200, { data: true })
     await post('/x/save', { id: 1, tags: ['a'] })

@@ -1,6 +1,6 @@
 // 风控设置（独占一个标签页）：config/fetch?key=insider_guard 读取初值，整组提交 config/save
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Input, InputNumber } from 'antd'
+import { Button, Input, InputNumber, Switch } from 'antd'
 import { useState, type ReactNode } from 'react'
 import { unwrap } from '@/api/request'
 import { fetchConfig, saveConfig } from '@/api/services/config'
@@ -15,6 +15,9 @@ interface GuardConfig {
   insider_guard_retention_days: number
   /** 假入口地址：被限制的用户拉订阅时所有节点的连接地址都换成它；留空则后端按用户生成固定的假公网 IPv4 */
   insider_guard_decoy_host: string
+  insider_guard_subscribe_audit_enabled: number
+  insider_guard_subscribe_audit_retention_days: number
+  insider_guard_subscribe_audit_max_records: number
 }
 
 type NumberKey = Exclude<keyof GuardConfig, 'insider_guard_decoy_host'>
@@ -23,6 +26,9 @@ const DEFAULTS: GuardConfig = {
   insider_guard_risk_threshold: 50,
   insider_guard_retention_days: 3,
   insider_guard_decoy_host: '',
+  insider_guard_subscribe_audit_enabled: 1,
+  insider_guard_subscribe_audit_retention_days: 3,
+  insider_guard_subscribe_audit_max_records: 100000,
 }
 
 /** 假入口地址：IPv6（至少两个冒号，可带方括号，后端会去掉）| IPv4（四段数字）| 域名 三选一，与后端 ConfigSave 的校验一致 */
@@ -39,6 +45,9 @@ function normalize(raw: Record<string, unknown> | undefined): GuardConfig {
     insider_guard_risk_threshold: int('insider_guard_risk_threshold'),
     insider_guard_retention_days: int('insider_guard_retention_days'),
     insider_guard_decoy_host: String(raw?.insider_guard_decoy_host ?? '').trim(),
+    insider_guard_subscribe_audit_enabled: int('insider_guard_subscribe_audit_enabled'),
+    insider_guard_subscribe_audit_retention_days: int('insider_guard_subscribe_audit_retention_days'),
+    insider_guard_subscribe_audit_max_records: int('insider_guard_subscribe_audit_max_records'),
   }
 }
 
@@ -117,6 +126,20 @@ function SettingsForm({ initial }: { initial: GuardConfig }) {
     }
     const host = form.insider_guard_decoy_host.trim()
     if (host && !HOST_PATTERN.test(host)) return message.error('假入口地址只能填域名或 IP')
+    if (
+      !Number.isInteger(form.insider_guard_subscribe_audit_retention_days) ||
+      form.insider_guard_subscribe_audit_retention_days < 1 ||
+      form.insider_guard_subscribe_audit_retention_days > 365
+    ) {
+      return message.error('逐次订阅审计保留天数需为 1～365 之间的整数')
+    }
+    if (
+      !Number.isInteger(form.insider_guard_subscribe_audit_max_records) ||
+      form.insider_guard_subscribe_audit_max_records < 1 ||
+      form.insider_guard_subscribe_audit_max_records > 1000000
+    ) {
+      return message.error('逐次订阅审计最多记录数需为 1～1000000 之间的整数')
+    }
     setSaving(true)
     const res = await saveConfig({ ...form, insider_guard_decoy_host: host })
     setSaving(false)
@@ -126,6 +149,8 @@ function SettingsForm({ initial }: { initial: GuardConfig }) {
     void queryClient.invalidateQueries({ queryKey: guardKeys.config })
     void queryClient.invalidateQueries({ queryKey: guardKeys.usersAll })
     void queryClient.invalidateQueries({ queryKey: guardKeys.userDetail })
+    void queryClient.invalidateQueries({ queryKey: guardKeys.subscribeAudit })
+    void queryClient.invalidateQueries({ queryKey: guardKeys.subscribeAuditStats })
   }
 
   return (
@@ -143,7 +168,7 @@ function SettingsForm({ initial }: { initial: GuardConfig }) {
         />
       </Row>
       <Row
-        title="审计保留天数"
+        title="小时活动保留天数"
         description="每小时清理超过保留期的登录 / 订阅活动及不活跃节点下发记录，UA 字典多留 1 天。审核与异常登记长期保留；持续活跃的节点记录首次时间可能更早。1～365 天，默认 3；不足 2 天可能影响候选完整性。每活跃设备每天约 24 行、每行约 0.4 KB，万级用户建议不超过 7 天；数据含 IP 与 UA，请按当地法规设置"
       >
         <InputNumber
@@ -166,6 +191,47 @@ function SettingsForm({ initial }: { initial: GuardConfig }) {
           value={form.insider_guard_decoy_host}
           onChange={(e) => set('insider_guard_decoy_host', e.target.value)}
         />
+      </Row>
+      <h3 className="block-title" style={{ marginTop: 24 }}>
+        逐次订阅审计
+      </h3>
+      <Row
+        title="启用逐次采集"
+        description="识别到用户后，逐次记录普通订阅与 App 配置请求及处理失败；无效 token、提前拦截不在覆盖范围。记录异步写入，不保存 token、完整请求 URL 或请求头。关闭后保留已有数据并继续自动清理，不影响上方小时活动与风险评分"
+      >
+        <Switch
+          aria-label="启用逐次订阅审计"
+          checked={form.insider_guard_subscribe_audit_enabled === 1}
+          onChange={(checked) => set('insider_guard_subscribe_audit_enabled', checked ? 1 : 0)}
+        />
+      </Row>
+      <Row
+        title="逐次明细保留天数"
+        description="独立于上方小时活动保留期，范围 1～365 天，默认 3 天。超过天数或条数任一上限时，自动清理最旧明细；缩短上限可能删除已有明细"
+      >
+        <InputNumber
+          aria-label="逐次订阅审计保留天数"
+          min={1}
+          max={365}
+          precision={0}
+          value={form.insider_guard_subscribe_audit_retention_days}
+          onChange={(value) => set('insider_guard_subscribe_audit_retention_days', value)}
+        />
+        <Unit>天</Unit>
+      </Row>
+      <Row
+        title="逐次明细最多条数"
+        description="范围 1～1000000 条，默认 100000 条。每分钟分批清理，短时超限在后续轮次收敛。逐次明细占用高于小时合并数据，请结合使用量设置；统计只覆盖仍保留的明细"
+      >
+        <InputNumber
+          aria-label="逐次订阅审计最多记录数"
+          min={1}
+          max={1000000}
+          precision={0}
+          value={form.insider_guard_subscribe_audit_max_records}
+          onChange={(value) => set('insider_guard_subscribe_audit_max_records', value)}
+        />
+        <Unit>条</Unit>
       </Row>
       <div style={{ padding: '16px 0' }}>
         <Button type="primary" loading={saving} onClick={() => void save()}>

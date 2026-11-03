@@ -11,6 +11,11 @@ import type {
   GuardTimeline,
   GuardUserDetail,
   NodeType,
+  SubscribeAuditDetail,
+  SubscribeAuditDimension,
+  SubscribeAuditFilter,
+  SubscribeAuditRecord,
+  SubscribeAuditStats,
 } from '../types'
 
 // 风控中心接口：GET 用 query，POST 用表单；节点一律用 node_type + node_id 标识
@@ -50,3 +55,11 @@ export const createNodeIncident = (params: {
 }) => post<boolean>(guardPath('nodeIncident'), params)
 export const fetchIncidentCandidates = (id: number) => guardGet<GuardCandidates>('candidates', { id })
 export const fetchIncidentTimeline = (id: number) => guardGet<GuardTimeline>('timeline', { id })
+
+export const fetchSubscribeAudit = (params: SubscribeAuditFilter & { current: number; pageSize: number }) =>
+  guardGet<SubscribeAuditRecord[]>('subscribeAudit', params)
+/** fresh 只控制本次统计重算，不应放入 React Query 的 key。 */
+export const fetchSubscribeAuditStats = (
+  params: SubscribeAuditFilter & { dimension: SubscribeAuditDimension; fresh?: 1 },
+) => guardGet<SubscribeAuditStats>('subscribeAuditStats', params)
+export const fetchSubscribeAuditDetail = (id: number) => guardGet<SubscribeAuditDetail>('subscribeAuditDetail', { id })

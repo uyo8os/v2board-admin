@@ -17,10 +17,11 @@ import { NodeIncidents } from './NodeIncidents'
 import { OverviewCards } from './OverviewCards'
 import { RecentEvents } from './RecentEvents'
 import { RiskUsers } from './RiskUsers'
+import { SubscribeAudit } from './SubscribeAudit'
 import { guardKeys, hoursLabel, Note, useGuardUsers } from './shared'
 import { UserRiskDetail } from './UserRiskDetail'
 
-type TabKey = 'overview' | 'events' | 'incidents' | 'detail' | 'settings'
+type TabKey = 'overview' | 'events' | 'subscribeAudit' | 'incidents' | 'detail' | 'settings'
 
 /** 标签页内容区：与系统配置页一样放在 block-content 里（有内边距） */
 function Pane({ children }: { children: ReactNode }) {
@@ -90,6 +91,15 @@ export default function InsiderGuardPage() {
       children: (
         <Pane>
           <RecentEvents />
+        </Pane>
+      ),
+    },
+    {
+      key: 'subscribeAudit',
+      label: '订阅审计',
+      children: (
+        <Pane>
+          <SubscribeAudit onUserDetail={showDetail} />
         </Pane>
       ),
     },
