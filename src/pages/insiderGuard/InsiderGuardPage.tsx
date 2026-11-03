@@ -42,6 +42,13 @@ export default function InsiderGuardPage() {
   const users = useGuardUsers(hours)
   const highRisk = users.data ? users.data.filter((u) => u.high_risk).length : undefined
 
+  // 手动刷新与返回概览同时更新卡片和风险用户，避免只更新表格。
+  const refreshOverview = () => Promise.all([overview.refetch(), users.refetch()])
+  const changeTab = (key: TabKey) => {
+    setTab(key)
+    if (key === 'overview') void refreshOverview()
+  }
+
   const showDetail = (userId: number) => {
     setDetailTarget((target) => ({ seq: target.seq + 1, userId }))
     setTab('detail')
@@ -66,7 +73,14 @@ export default function InsiderGuardPage() {
             loading={overview.isLoading}
             failed={overview.isError}
           />
-          <RiskUsers hours={hours} onHoursChange={setHours} onDetail={showDetail} onReviewed={reviewed} />
+          <RiskUsers
+            hours={hours}
+            onHoursChange={setHours}
+            onDetail={showDetail}
+            onReviewed={reviewed}
+            onRefresh={refreshOverview}
+            refreshing={overview.isFetching || users.isFetching}
+          />
         </Pane>
       ),
     },
@@ -116,7 +130,7 @@ export default function InsiderGuardPage() {
   return (
     <AdminLayout title="风控中心">
       <div className="block block-rounded">
-        <V2Tabs activeKey={tab} onChange={(key) => setTab(key as TabKey)} size="large" items={items} />
+        <V2Tabs activeKey={tab} onChange={(key) => changeTab(key as TabKey)} size="large" items={items} />
         {/* 所有标签页共用的页脚说明 */}
         <div className="block-content block-content-full" style={{ paddingTop: 0 }}>
           <Note>

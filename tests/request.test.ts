@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // 请求层依赖 window / localStorage / antd 静态方法，这里用最小桩替代
 const notificationError = vi.fn()
 vi.mock('../src/app/staticApi', () => ({ notification: { error: notificationError } }))
-vi.mock('../src/app/settings', () => ({ apiBase: 'http://api.test/api/v1' }))
+vi.mock('../src/app/settings', () => ({
+  apiBase: 'http://api.test/api/v1',
+  adminPath: (path: string) => `/devadmin123${path}`,
+}))
 
 const store = new Map<string, string>()
 const location = { origin: 'http://admin.test', pathname: '/', href: 'http://admin.test/#/notice' }
@@ -17,6 +20,7 @@ vi.stubGlobal('window', {
 })
 
 const { get, post } = await import('../src/api/request')
+const guard = await import('../src/api/services/insiderGuard')
 
 function mockFetch(status: number, body: unknown, contentType = 'application/json') {
   const fn = vi.fn(
@@ -46,6 +50,75 @@ describe('request', () => {
     expect(url).toBe('http://api.test/api/v1/devadmin123/notice/fetch?key=site')
     expect(new Headers(init.headers).get('authorization')).toBe('jwt-token')
     expect(init.credentials).toBe('include')
+    expect(init).not.toHaveProperty('cache')
+    expect(Object.keys(init).toSorted()).toEqual(['credentials', 'headers'])
+  })
+
+  it('GET 可单独指定缓存模式，不增加自定义请求头', async () => {
+    store.set('authorization', 'jwt-token')
+    const fetch = mockFetch(200, { data: true })
+    await get('/x/fetch', { id: 7 }, { cache: 'no-store' })
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('http://api.test/api/v1/x/fetch?id=7')
+    expect(init.cache).toBe('no-store')
+    expect(init.credentials).toBe('include')
+    expect([...new Headers(init.headers)]).toEqual([['authorization', 'jwt-token']])
+  })
+
+  it('全部风控 GET 禁用 HTTP 缓存，同一毫秒的请求仍有独立 nonce，业务参数保留', async () => {
+    store.set('authorization', 'jwt-token')
+    const fetch = mockFetch(200, { data: [] })
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(123456789)
+    try {
+      await guard.fetchGuardOverview()
+      await guard.fetchGuardUsers(24)
+      await guard.fetchGuardEvents({ current: 2, pageSize: 20, user_id: 7, event_type: 'subscription' })
+      await guard.fetchGuardUserDetail(7)
+      await guard.fetchIncidentCandidates(3)
+      await guard.fetchIncidentTimeline(3)
+      await guard.fetchGuardOverview()
+    } finally {
+      clock.mockRestore()
+    }
+    const expected = [
+      ['overview', {}],
+      ['users', { hours: '24' }],
+      ['events', { current: '2', pageSize: '20', user_id: '7', event_type: 'subscription' }],
+      ['userDetail', { id: '7' }],
+      ['candidates', { id: '3' }],
+      ['timeline', { id: '3' }],
+      ['overview', {}],
+    ] as const
+    const nonces = new Set<string>()
+    for (const [index, call] of fetch.mock.calls.entries()) {
+      const [target, init] = call as unknown as [string, RequestInit]
+      const url = new URL(target)
+      expect(url.pathname).toBe(`/api/v1/devadmin123/insiderGuard/${expected[index][0]}`)
+      const nonce = url.searchParams.get('_ig')
+      expect(nonce).toMatch(/^123456789-\d+$/)
+      nonces.add(nonce!)
+      url.searchParams.delete('_ig')
+      expect(Object.fromEntries(url.searchParams)).toEqual(expected[index][1])
+      expect(init.cache).toBe('no-store')
+      expect([...new Headers(init.headers)]).toEqual([['authorization', 'jwt-token']])
+    }
+    expect(fetch).toHaveBeenCalledTimes(7)
+    expect(nonces.size).toBe(7)
+  })
+
+  it('风控 POST 保持表单请求，不添加 nonce 或缓存模式', async () => {
+    const fetch = mockFetch(200, { data: true })
+    await guard.saveGuardReview({ id: 7, action: 'watch', reason: 'review reason' })
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('http://api.test/api/v1/devadmin123/insiderGuard/review')
+    expect(init.method).toBe('POST')
+    expect(init).not.toHaveProperty('cache')
+    expect(new Headers(init.headers).get('content-type')).toBe('application/x-www-form-urlencoded')
+    expect(Object.fromEntries(new URLSearchParams(init.body as string))).toEqual({
+      id: '7',
+      action: 'watch',
+      reason: 'review reason',
+    })
   })
 
   it('POST 默认 form-urlencoded，json=true 时发 JSON', async () => {
@@ -54,10 +127,12 @@ describe('request', () => {
     let init = (fetch.mock.calls[0] as unknown as [string, RequestInit])[1]
     expect(new Headers(init.headers).get('content-type')).toBe('application/x-www-form-urlencoded')
     expect(init.body).toBe('id=1&tags[0]=a')
+    expect(init).not.toHaveProperty('cache')
     await post('/server/manage/sort', { vmess: { 1: 0 } }, true)
     init = (fetch.mock.calls[1] as unknown as [string, RequestInit])[1]
     expect(new Headers(init.headers).get('content-type')).toBe('application/json')
     expect(init.body).toBe('{"vmess":{"1":0}}')
+    expect(init).not.toHaveProperty('cache')
   })
 
   it('完整地址（含 http）原样使用并补 ?（与原版一致）', async () => {
@@ -88,7 +163,11 @@ describe('request', () => {
     mockFetch(500, { message: '邮箱已存在于系统中' })
     const res = await post('/x', {})
     expect(res.msg).toBe('邮箱已存在于系统中')
-    expect(notificationError).toHaveBeenCalledWith({ title: '请求失败', description: '邮箱已存在于系统中', duration: 1.5 })
+    expect(notificationError).toHaveBeenCalledWith({
+      title: '请求失败',
+      description: '邮箱已存在于系统中',
+      duration: 1.5,
+    })
   })
 
   it('非 JSON 响应按 ArrayBuffer 返回（CSV 导出）', async () => {

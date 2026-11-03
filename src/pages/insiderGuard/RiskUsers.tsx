@@ -26,9 +26,12 @@ interface RiskUsersProps {
   onDetail: (userId: number) => void
   /** 审核保存成功后刷新概览与用户详情 */
   onReviewed: () => void
+  /** 刷新风险用户与概览卡片。 */
+  onRefresh: () => Promise<unknown>
+  refreshing: boolean
 }
 
-export function RiskUsers({ hours, onHoursChange, onDetail, onReviewed }: RiskUsersProps) {
+export function RiskUsers({ hours, onHoursChange, onDetail, onReviewed, onRefresh, refreshing }: RiskUsersProps) {
   const ui = useUi()
   const users = useGuardUsers(hours)
 
@@ -96,7 +99,7 @@ export function RiskUsers({ hours, onHoursChange, onDetail, onReviewed }: RiskUs
       extra={
         <>
           <Select<GuardHours> style={{ width: 150 }} value={hours} options={HOURS_OPTIONS} onChange={onHoursChange} />
-          <Button icon={<ReloadOutlined />} loading={users.isFetching} onClick={() => void users.refetch()}>
+          <Button icon={<ReloadOutlined />} loading={refreshing || users.isFetching} onClick={() => void onRefresh()}>
             刷新
           </Button>
         </>

@@ -72,9 +72,9 @@ async function request<T>(url: string, init: RequestInit = {}, options: RequestO
   return { code: res.status, ...body } as ApiResult<T>
 }
 
-export function get<T>(url: string, params?: object) {
+export function get<T>(url: string, params?: object, options?: Pick<RequestInit, 'cache'>) {
   const query = stringify(params)
-  return request<T>(query ? `${url}${url.indexOf('?') > 0 ? '&' : '?'}${query}` : url)
+  return request<T>(query ? `${url}${url.indexOf('?') > 0 ? '&' : '?'}${query}` : url, options)
 }
 
 export function post<T>(url: string, data?: object, json = false, options?: RequestOptions) {
