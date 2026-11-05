@@ -82,6 +82,7 @@ const routes: RouteObject[] = [
   // 工单对话在新窗口打开，没有管理端框架
   { path: '/ticket/:ticket_id', ...page(() => import('@/pages/ticket/TicketChatPage')) },
   { path: '/queue', ...page(() => import('@/pages/queue/QueuePage')) },
+  { path: '/logs', ...page(() => import('@/pages/logs/LogCenterPage')) },
   // 与原版一致：未匹配的路由渲染空白
   { path: '*', element: null },
 ]

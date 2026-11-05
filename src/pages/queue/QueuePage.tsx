@@ -5,20 +5,10 @@ import { Loading } from '@/components/Loading'
 import { V2Table } from '@/components/table/V2Table'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { useQueueMonitorStore } from '@/stores/queueMonitor'
-
-const QUEUE_NAME: Record<string, string> = {
-  insider_guard_audit: '订阅审计队列',
-  order_handle: '订单队列',
-  send_email: '邮件队列',
-  send_email_mass: '邮件群发队列',
-  send_telegram: 'Telegram消息队列',
-  stat: '统计队列',
-  traffic_fetch: '流量消费队列',
-  speed_limit: '动态限速队列',
-}
+import { queueName } from '@/utils/queue'
 
 const columns: TableColumnsType<QueueWorkload> = [
-  { title: '队列名称', dataIndex: 'name', key: 'name', render: (name: string) => QUEUE_NAME[name] ?? name },
+  { title: '队列名称', dataIndex: 'name', key: 'name', render: queueName },
   { title: '作业量', dataIndex: 'processes', key: 'processes' },
   { title: '任务量', dataIndex: 'length', key: 'length' },
   { title: '占用时间', dataIndex: 'wait', key: 'wait', align: 'right', render: (wait: number) => `${wait}s` },
@@ -62,9 +52,21 @@ export default function QueuePage() {
           </div>
           <div className="block-content p-0">
             <div className="row no-gutters">
-              <Stat label="当前作业量" value={stats?.jobsPerMinute} className="col-lg-6 col-xl-3 border-right p-4 border-bottom" />
-              <Stat label="近一小时处理量" value={stats?.recentJobs} className="col-lg-6 col-xl-3 border-right p-4 border-bottom" />
-              <Stat label="7日内报错数量" value={stats?.failedJobs} className="col-lg-6 col-xl-3 border-right p-4 border-bottom" />
+              <Stat
+                label="当前作业量"
+                value={stats?.jobsPerMinute}
+                className="col-lg-6 col-xl-3 border-right p-4 border-bottom"
+              />
+              <Stat
+                label="近一小时处理量"
+                value={stats?.recentJobs}
+                className="col-lg-6 col-xl-3 border-right p-4 border-bottom"
+              />
+              <Stat
+                label="7日内报错数量"
+                value={stats?.failedJobs}
+                className="col-lg-6 col-xl-3 border-right p-4 border-bottom"
+              />
               <div className="col-lg-6 col-xl-3 p-4 border-bottom overflow-hidden">
                 <div>
                   <div>状态</div>

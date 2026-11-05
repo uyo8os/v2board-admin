@@ -25,4 +25,5 @@ export const MENU: MenuEntry[] = [
   { type: 'item', title: '知识库管理', href: '/knowledge', icon: 'si-bulb' },
   { type: 'heading', title: '指标' },
   { type: 'item', title: '队列监控', href: '/queue', icon: 'si-bar-chart' },
+  { type: 'item', title: '日志中心', href: '/logs', icon: 'si-notebook' },
 ]
