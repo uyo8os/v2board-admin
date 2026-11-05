@@ -7,6 +7,7 @@ import { AdminLayout } from '@/layouts/AdminLayout'
 import { useQueueMonitorStore } from '@/stores/queueMonitor'
 
 const QUEUE_NAME: Record<string, string> = {
+  insider_guard_audit: '订阅审计队列',
   order_handle: '订单队列',
   send_email: '邮件队列',
   send_email_mass: '邮件群发队列',
