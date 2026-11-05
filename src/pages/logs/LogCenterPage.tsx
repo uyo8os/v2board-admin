@@ -161,6 +161,7 @@ function LogTable<T extends LogRecord>({
           loading={query.isFetching}
           columns={columns(setDetails)}
           dataSource={query.data?.rows ?? []}
+          tableLayout="fixed"
           scroll={{ x: 850 }}
           pagination={{
             ...paginationProps(ui),
@@ -211,6 +212,7 @@ const systemColumns = (show: (details: Detail[]) => void): TableColumnsType<Syst
         type="link"
         onClick={() =>
           show([
+            { label: 'ID', value: row.id },
             { label: '事件', value: row.title },
             { label: '级别', value: row.level },
             { label: '时间', value: systemTime(row.created_at) },
@@ -231,8 +233,8 @@ const systemColumns = (show: (details: Detail[]) => void): TableColumnsType<Syst
 
 const queueColumns = (show: (details: Detail[]) => void): TableColumnsType<QueueLog> => [
   { title: '失败时间', dataIndex: 'failed_at', width: 180, render: failedTime },
-  { title: '队列名称', dataIndex: 'queue', render: (value: string) => queueName(value) },
-  { title: '连接', dataIndex: 'connection', width: 140 },
+  { title: '队列名称', dataIndex: 'queue', width: 150, render: (value: string) => queueName(value) },
+  { title: '连接', dataIndex: 'connection', width: 100 },
   { title: '异常', dataIndex: 'exception', ellipsis: true },
   {
     title: '操作',
@@ -243,6 +245,7 @@ const queueColumns = (show: (details: Detail[]) => void): TableColumnsType<Queue
         type="link"
         onClick={() =>
           show([
+            { label: 'ID', value: row.id },
             { label: '失败时间', value: failedTime(row.failed_at) },
             { label: '队列', value: `${queueName(row.queue)} (${row.queue})` },
             { label: '连接', value: row.connection },
@@ -276,6 +279,7 @@ const mailColumns = (show: (details: Detail[]) => void): TableColumnsType<MailLo
         type="link"
         onClick={() =>
           show([
+            { label: 'ID', value: row.id },
             { label: '时间', value: systemTime(row.created_at) },
             { label: '收件邮箱', value: row.email },
             { label: '主题', value: row.subject },
