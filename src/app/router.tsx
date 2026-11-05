@@ -79,6 +79,7 @@ const routes: RouteObject[] = [
   { path: '/user', ...page(() => import('@/pages/user/UserPage')) },
   { path: '/insiderGuard', ...page(() => import('@/pages/insiderGuard/InsiderGuardPage')) },
   { path: '/ticket', ...page(() => import('@/pages/ticket/TicketPage')) },
+  { path: '/trafficAdvance', ...page(() => import('@/pages/trafficAdvance/TrafficAdvancePage')) },
   // 工单对话在新窗口打开，没有管理端框架
   { path: '/ticket/:ticket_id', ...page(() => import('@/pages/ticket/TicketChatPage')) },
   { path: '/queue', ...page(() => import('@/pages/queue/QueuePage')) },
