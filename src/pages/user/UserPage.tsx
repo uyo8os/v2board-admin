@@ -170,18 +170,16 @@ export default function UserPage() {
       ),
     },
     {
-      title: <Tooltip title="距离下次流量重置的天数">重置日</Tooltip>,
-      dataIndex: 'reset_day',
-      key: 'reset_day',
-      render: (days?: number | null) =>
-        days === undefined ? (
-          <Tooltip title="接口未返回重置日">未获取</Tooltip>
-        ) : days === null ? (
+      title: <Tooltip title="计划重置时间按本地时区显示，实际执行可能因任务调度延迟">下次重置</Tooltip>,
+      dataIndex: 'reset_at',
+      key: 'reset_at',
+      render: (resetAt?: number | null) =>
+        resetAt === undefined ? (
+          <Tooltip title="接口未返回重置时间">未获取</Tooltip>
+        ) : resetAt === null ? (
           '—'
-        ) : days === 0 ? (
-          '待重置'
         ) : (
-          `${days}日后`
+          formatTime(resetAt, 'YYYY/MM/DD HH:mm:ss')
         ),
     },
     { title: '余额', dataIndex: 'balance', key: 'balance', sorter: true },
