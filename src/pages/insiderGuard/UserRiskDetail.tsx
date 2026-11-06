@@ -118,7 +118,7 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
               user={{
                 id: data.user_id,
                 email: data.email,
-                restricted: data.restriction !== null,
+                restricted: !!data.restriction || !!data.consumption_restriction,
                 summary: `最近 1 小时：评分 ${data.risk.score}，订阅 ${data.risk.subscription_requests_1h} 次，IP ${data.risk.distinct_ips_1h} 个`,
               }}
               onSaved={onReviewed}
@@ -150,7 +150,7 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
                 </span>
                 <span>
                   <span style={MUTED}>限制状态：</span>
-                  {data.restriction ? (
+                  {data.restriction && (
                     <Tag color="red">
                       {data.restriction.mode === 'exclude'
                         ? '节点排除'
@@ -158,9 +158,9 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
                           ? '假入口限制'
                           : '限制类型未获取'}
                     </Tag>
-                  ) : (
-                    <Tag>未限制</Tag>
                   )}
+                  {data.consumption_restriction && <Tag color="red">消费限制</Tag>}
+                  {!data.restriction && !data.consumption_restriction && <Tag>未限制</Tag>}
                 </span>
               </div>
               {data.restriction && (
@@ -184,6 +184,17 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
                   ) : data.restriction.mode === 'decoy' ? (
                     <div>订阅与 App 配置节点入口为假地址 {data.restriction.decoy_host}</div>
                   ) : null}
+                </Note>
+              )}
+              {data.consumption_restriction && (
+                <Note style={{ marginBottom: 12 }}>
+                  <div>
+                    消费限制于 {guardTime(data.consumption_restriction.created_at)} · 管理员 #
+                    {data.consumption_restriction.admin_id ?? '-'}
+                  </div>
+                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    原因：{data.consumption_restriction.reason}
+                  </div>
                 </Note>
               )}
               <div className="d-flex flex-wrap" style={{ marginBottom: 16 }}>

@@ -31,7 +31,7 @@ const guardGet = <T>(name: string, params?: object) =>
 export const fetchGuardOverview = () => guardGet<GuardOverview>('overview')
 /** 风险用户：按时段统计订阅次数与来源 IP 数并评分（响应顶层另有 hours / threshold） */
 export const fetchGuardUsers = (hours: GuardHours) => guardGet<GuardRiskUser[]>('users', { hours })
-/** 当前受限账号（服务端分页，顶层 total） */
+/** 当前限制记录（服务端分页，顶层 total 为记录数） */
 export const fetchGuardRestrictions = (params: { current: number; pageSize: number }) =>
   guardGet<GuardRestriction[]>('restrictions', params)
 /** 事件列表（服务端分页，顶层 total），可按用户 ID、事件类型筛选 */
@@ -56,6 +56,11 @@ export const excludeGuardNodes = (params: {
 }) => post<boolean>(guardPath('nodeExclusions'), { ...params, nodes: JSON.stringify(params.nodes) })
 /** 解除限制：恢复真实入口；原因 8～1000 字 */
 export const releaseGuardUser = (params: { id: number; reason: string }) => post<boolean>(guardPath('release'), params)
+/** 消费限制与节点限制相互独立 */
+export const restrictGuardConsumption = (params: { id: number; reason: string }) =>
+  post<boolean>(guardPath('consumptionRestrict'), params)
+export const releaseGuardConsumption = (params: { id: number; reason: string }) =>
+  post<boolean>(guardPath('consumptionRelease'), params)
 /** 登记节点异常：occurred_at 为 unix 秒，reason 1000 字以内 */
 export const createNodeIncident = (params: {
   node_type: NodeType

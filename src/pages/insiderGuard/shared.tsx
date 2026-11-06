@@ -60,7 +60,9 @@ export const REVIEW_ACTION_TEXT: Record<GuardReviewAction, string> = {
   restrict_recommended: '建议限制',
   restrict: '限制（下发假入口）',
   node_exclude: '节点排除',
-  release: '解除限制',
+  release: '解除节点限制',
+  consumption_restrict: '限制消费',
+  consumption_release: '解除消费限制',
 }
 
 /** unix 秒 → YYYY-MM-DD HH:mm:ss，空值显示 - */

@@ -466,7 +466,7 @@ export interface GuardExcludedNode {
   node_name: string | null
 }
 
-export type GuardRestrictionMode = 'decoy' | 'exclude'
+export type GuardRestrictionMode = 'decoy' | 'exclude' | 'consumption'
 
 export interface GuardRestriction {
   user_id: number
@@ -496,7 +496,7 @@ export interface GuardOverview {
   recent_events: number
   /** 人工审核记录总数 */
   reviews: number
-  /** 处于假入口限制或节点排除中的账号数 */
+  /** 处于任一限制中的账号数，同一账号去重 */
   restricted: number
   incidents: GuardIncident[]
 }
@@ -552,7 +552,15 @@ export interface GuardRisk {
 }
 
 /** 审核动作；restrict / release 由 insiderGuard/restrict、insiderGuard/release 写入（限制 = 拉订阅时下发假入口，不封号） */
-export type GuardReviewAction = 'watch' | 'clear' | 'restrict_recommended' | 'restrict' | 'release' | 'node_exclude'
+export type GuardReviewAction =
+  | 'watch'
+  | 'clear'
+  | 'restrict_recommended'
+  | 'restrict'
+  | 'release'
+  | 'node_exclude'
+  | 'consumption_restrict'
+  | 'consumption_release'
 
 export interface GuardReview {
   id: number
@@ -575,8 +583,14 @@ export interface GuardUserDetail {
     reason: string
     created_at: number
     decoy_host: string | null
-    mode: GuardRestrictionMode
+    mode: Exclude<GuardRestrictionMode, 'consumption'>
     excluded_nodes: GuardExcludedNode[]
+  } | null
+  /** 消费限制与节点限制彼此独立 */
+  consumption_restriction: {
+    admin_id: number | null
+    reason: string
+    created_at: number
   } | null
   events: GuardEvent[]
   /** 可下发节点记录：每人每节点一行，times 按 6 小时去重，并非真实拉取次数。 */

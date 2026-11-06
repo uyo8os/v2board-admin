@@ -44,7 +44,13 @@ export function Restrictions({ onDetail, onReviewed }: RestrictionsProps) {
       title: '限制类型',
       key: 'mode',
       render: (_: unknown, row) =>
-        row.mode === 'exclude' ? '节点排除' : row.mode === 'decoy' ? '假入口限制' : '类型未获取',
+        row.mode === 'exclude'
+          ? '节点排除'
+          : row.mode === 'decoy'
+            ? '假入口限制'
+            : row.mode === 'consumption'
+              ? '消费限制'
+              : '类型未获取',
     },
     {
       title: '排除节点',
@@ -86,7 +92,9 @@ export function Restrictions({ onDetail, onReviewed }: RestrictionsProps) {
               ))}
             </span>
           </Popover>
-        ) : '-',
+        ) : (
+          '-'
+        ),
     },
     { title: '限制时间', dataIndex: 'created_at', key: 'created_at', width: 170, render: guardTime },
     {
@@ -134,10 +142,12 @@ export function Restrictions({ onDetail, onReviewed }: RestrictionsProps) {
         </Button>
       }
     >
-      <Note style={{ marginBottom: 12 }}>显示当前所有受限账号，可查看详情或通过审核解除限制。</Note>
+      <Note style={{ marginBottom: 12 }}>
+        显示当前所有限制，同一账号的节点限制和消费限制分别列出，可通过审核分别解除。
+      </Note>
       {query.isError && <Failed>读取失败：限制列表暂时无法加载，请点「刷新」重试</Failed>}
       <SubTable<GuardRestriction>
-        rowKey="user_id"
+        rowKey={(row) => `${row.user_id}:${row.mode}`}
         loading={query.isFetching}
         dataSource={query.data?.rows ?? []}
         columns={columns}
