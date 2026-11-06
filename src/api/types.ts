@@ -361,6 +361,8 @@ export interface AdminUser {
   alive_ip?: number | null
   ips?: string
   subscribe_url?: string
+  /** 距下次流量重置的天数；无下次重置时为 null */
+  reset_day?: number | null
   /** 以下只在 getUserInfoById 里有 */
   invite_user?: AdminUser
   invite_user_email?: string

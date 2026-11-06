@@ -169,6 +169,21 @@ export default function UserPage() {
         </Tag>
       ),
     },
+    {
+      title: <Tooltip title="距离下次流量重置的天数">重置日</Tooltip>,
+      dataIndex: 'reset_day',
+      key: 'reset_day',
+      render: (days?: number | null) =>
+        days === undefined ? (
+          <Tooltip title="接口未返回重置日">未获取</Tooltip>
+        ) : days === null ? (
+          '—'
+        ) : days === 0 ? (
+          '待重置'
+        ) : (
+          `${days}日后`
+        ),
+    },
     { title: '余额', dataIndex: 'balance', key: 'balance', sorter: true },
     { title: '佣金', dataIndex: 'commission_balance', key: 'commission_balance', sorter: true },
     {
