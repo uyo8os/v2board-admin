@@ -1,7 +1,7 @@
 // 当前受限账号直接来自限制表，不受风险用户统计时段影响。
 import { ReloadOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Tooltip, type TableColumnsType } from 'antd'
+import { Button, Popover, Tooltip, type TableColumnsType } from 'antd'
 import { useEffect, useState } from 'react'
 import { ApiError } from '@/api/request'
 import { fetchGuardRestrictions } from '@/api/services/insiderGuard'
@@ -49,17 +49,44 @@ export function Restrictions({ onDetail, onReviewed }: RestrictionsProps) {
     {
       title: '排除节点',
       key: 'excluded_nodes',
+      width: 260,
       render: (_: unknown, row) =>
-        row.mode === 'exclude'
-          ? row.excluded_nodes.map((node) => (
-              <NodeLabel
-                key={`${node.node_type}:${node.node_id}`}
-                type={node.node_type}
-                id={node.node_id}
-                name={node.node_name}
-              />
-            ))
-          : '-',
+        row.mode === 'exclude' && row.excluded_nodes.length > 0 ? (
+          <Popover
+            title={`排除节点（${row.excluded_nodes.length}）`}
+            trigger={['hover', 'focus', 'click']}
+            placement="topLeft"
+            content={
+              <div style={{ maxHeight: 240, maxWidth: 'min(380px, calc(100vw - 48px))', overflowY: 'auto' }}>
+                {row.excluded_nodes.map((node) => (
+                  <div key={`${node.node_type}:${node.node_id}`} style={{ padding: '2px 0', overflowWrap: 'anywhere' }}>
+                    <NodeLabel type={node.node_type} id={node.node_id} name={node.node_name} />
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={`查看全部 ${row.excluded_nodes.length} 个排除节点`}
+              style={{
+                display: 'block',
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+              }}
+            >
+              {row.excluded_nodes.map((node) => (
+                <span key={`${node.node_type}:${node.node_id}`} style={{ marginRight: 8 }}>
+                  <NodeLabel type={node.node_type} id={node.node_id} name={node.node_name} />
+                </span>
+              ))}
+            </span>
+          </Popover>
+        ) : '-',
     },
     { title: '限制时间', dataIndex: 'created_at', key: 'created_at', width: 170, render: guardTime },
     {
