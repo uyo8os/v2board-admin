@@ -182,7 +182,7 @@ function SettingsForm({ initial }: { initial: GuardConfig }) {
       </Row>
       <Row
         title="假入口地址"
-        description="被限制账号的订阅与 App 配置节点入口、SNI、Host 头及 obfs host 换成该地址，端口、凭据不变（节点名恰好等于入口地址时也替换）。留空则按用户生成固定的保留段 IPv4（240～254 开头），也可填自己的蜜罐。解除后恢复，不影响登录后的用户面板；限制状态查询异常时配置暂不可用"
+        description="使用假入口限制的账号，其订阅与 App 配置节点入口、SNI、Host 头及 obfs host 换成该地址，端口、凭据不变（节点名恰好等于入口地址时也替换）。留空则按用户生成固定的保留段 IPv4（240～254 开头），也可填自己的蜜罐。解除后恢复，不影响登录后的用户面板；限制状态查询异常时配置暂不可用"
       >
         <Input
           style={{ width: 220 }}

@@ -48,6 +48,12 @@ export const saveGuardReview = (params: { id: number; action: GuardReviewAction;
 /** 限制：不封号，之后拉订阅时节点入口换成假地址；原因 12～1000 字，后端要求显式确认 */
 export const restrictGuardUser = (params: { id: number; reason: string }) =>
   post<boolean>(guardPath('restrict'), { ...params, confirm: 1 })
+/** 排除选中节点：完整替换当前限制 */
+export const excludeGuardNodes = (params: {
+  id: number
+  reason: string
+  nodes: Array<{ node_type: string; node_id: number }>
+}) => post<boolean>(guardPath('nodeExclusions'), { ...params, nodes: JSON.stringify(params.nodes) })
 /** 解除限制：恢复真实入口；原因 8～1000 字 */
 export const releaseGuardUser = (params: { id: number; reason: string }) => post<boolean>(guardPath('release'), params)
 /** 登记节点异常：occurred_at 为 unix 秒，reason 1000 字以内 */

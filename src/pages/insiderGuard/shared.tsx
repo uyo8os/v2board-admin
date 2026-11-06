@@ -59,6 +59,7 @@ export const REVIEW_ACTION_TEXT: Record<GuardReviewAction, string> = {
   clear: '解除疑虑',
   restrict_recommended: '建议限制',
   restrict: '限制（下发假入口）',
+  node_exclude: '节点排除',
   release: '解除限制',
 }
 

@@ -460,12 +460,22 @@ export interface QueueWorkload {
 }
 
 // 以下为风控中心（insiderGuard/*）的类型：节点一律用 node_type + node_id 标识，时间为 unix 秒
+export interface GuardExcludedNode {
+  node_type: NodeType
+  node_id: number
+  node_name: string | null
+}
+
+export type GuardRestrictionMode = 'decoy' | 'exclude'
+
 export interface GuardRestriction {
   user_id: number
   email: string | null
   admin_id: number | null
   reason: string
   created_at: number
+  mode: GuardRestrictionMode
+  excluded_nodes: GuardExcludedNode[]
 }
 
 /** 节点异常记录；node_name 由后端按节点列表解析（overview、candidates、timeline 里都有） */
@@ -486,7 +496,7 @@ export interface GuardOverview {
   recent_events: number
   /** 人工审核记录总数 */
   reviews: number
-  /** 限制中（拉订阅时下发假入口）的账号数 */
+  /** 处于假入口限制或节点排除中的账号数 */
   restricted: number
   incidents: GuardIncident[]
 }
@@ -504,7 +514,7 @@ export interface GuardRiskUser {
   ips: number
   score: number
   high_risk: boolean
-  /** 是否被限制（拉订阅时下发假入口） */
+  /** 是否处于任一限制中 */
   restricted: boolean
   last_seen: number
 }
@@ -542,7 +552,7 @@ export interface GuardRisk {
 }
 
 /** 审核动作；restrict / release 由 insiderGuard/restrict、insiderGuard/release 写入（限制 = 拉订阅时下发假入口，不封号） */
-export type GuardReviewAction = 'watch' | 'clear' | 'restrict_recommended' | 'restrict' | 'release'
+export type GuardReviewAction = 'watch' | 'clear' | 'restrict_recommended' | 'restrict' | 'release' | 'node_exclude'
 
 export interface GuardReview {
   id: number
@@ -560,7 +570,14 @@ export interface GuardUserDetail {
   banned: number
   risk: GuardRisk
   /** 当前的限制记录（decoy_host 为该用户拉订阅时拿到的假入口地址）；未限制为 null */
-  restriction: { admin_id: number | null; reason: string; created_at: number; decoy_host: string } | null
+  restriction: {
+    admin_id: number | null
+    reason: string
+    created_at: number
+    decoy_host: string | null
+    mode: GuardRestrictionMode
+    excluded_nodes: GuardExcludedNode[]
+  } | null
   events: GuardEvent[]
   /** 可下发节点记录：每人每节点一行，times 按 6 小时去重，并非真实拉取次数。 */
   deliveries: Array<{

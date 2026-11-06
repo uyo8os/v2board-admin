@@ -47,7 +47,7 @@ export function OverviewCards({ overview, highRisk, hoursText, loading, failed }
       >
         <Card icon="fa-bolt" label="近 24 小时事件" value={value(overview?.recent_events)} hint="登录与订阅拉取" />
         <Card icon="fa-clipboard-check" label="人工审核总数" value={value(overview?.reviews)} />
-        <Card icon="fa-ban" label="限制中账号" value={value(overview?.restricted)} hint="拉订阅时下发假入口" />
+        <Card icon="fa-ban" label="限制中账号" value={value(overview?.restricted)} hint="假入口限制或节点排除" />
         <Card
           icon="fa-exclamation-triangle"
           label="节点异常事件"

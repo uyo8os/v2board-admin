@@ -9,7 +9,7 @@ import type { GuardRestriction } from '@/api/types'
 import { paginationProps } from '@/hooks/usePagedList'
 import { useUi } from '@/stores/appearance'
 import { ReviewModal } from './ReviewModal'
-import { Ellipsis, Failed, guardKeys, guardTime, Note, Section, SubTable } from './shared'
+import { Ellipsis, Failed, guardKeys, guardTime, NodeLabel, Note, Section, SubTable } from './shared'
 
 interface RestrictionsProps {
   onDetail: (userId: number) => void
@@ -40,6 +40,27 @@ export function Restrictions({ onDetail, onReviewed }: RestrictionsProps) {
   const columns: TableColumnsType<GuardRestriction> = [
     { title: '用户 ID', dataIndex: 'user_id', key: 'user_id', width: 90 },
     { title: '邮箱', dataIndex: 'email', key: 'email', render: (email: string | null) => email || '已删除' },
+    {
+      title: '限制类型',
+      key: 'mode',
+      render: (_: unknown, row) =>
+        row.mode === 'exclude' ? '节点排除' : row.mode === 'decoy' ? '假入口限制' : '类型未获取',
+    },
+    {
+      title: '排除节点',
+      key: 'excluded_nodes',
+      render: (_: unknown, row) =>
+        row.mode === 'exclude'
+          ? row.excluded_nodes.map((node) => (
+              <NodeLabel
+                key={`${node.node_type}:${node.node_id}`}
+                type={node.node_type}
+                id={node.node_id}
+                name={node.node_name}
+              />
+            ))
+          : '-',
+    },
     { title: '限制时间', dataIndex: 'created_at', key: 'created_at', width: 170, render: guardTime },
     {
       title: '管理员 ID',

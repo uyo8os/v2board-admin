@@ -4,41 +4,89 @@
 // 解除限制：恢复真实入口，只对限制中的用户显示（后端对未限制的用户返回 422）。两者都会留审核记录。
 // 与项目里其他弹窗一样包住触发元素，点击打开；关闭动画结束后表单恢复初始值
 import { Checkbox, Input, Modal, Select, Tag } from 'antd'
+import { useQuery } from '@tanstack/react-query'
 import { cloneElement, useState, type MouseEventHandler, type ReactElement } from 'react'
-import { releaseGuardUser, restrictGuardUser, saveGuardReview } from '@/api/services/insiderGuard'
+import { unwrap } from '@/api/request'
+import {
+  excludeGuardNodes,
+  fetchGuardUserDetail,
+  releaseGuardUser,
+  restrictGuardUser,
+  saveGuardReview,
+} from '@/api/services/insiderGuard'
 import type { GuardReviewAction } from '@/api/types'
 import { message } from '@/app/staticApi'
 import { FormGroup } from '@/components/FormGroup'
-import { MUTED, Note, REVIEW_ACTION_TEXT, userLabel } from './shared'
+import { filterNodeOption, useNodeOptions, type NodeOption } from '@/components/NodeSelect'
+import { nodeKey, parseNodeKey } from '@/utils/nodes'
+import { guardKeys, MUTED, Note, REVIEW_ACTION_TEXT, userLabel } from './shared'
 
-const ACTIONS: GuardReviewAction[] = ['watch', 'clear', 'restrict_recommended', 'restrict', 'release']
-const ACTION_OPTIONS = ACTIONS.map((value) => ({ value, label: REVIEW_ACTION_TEXT[value] }))
+type ReviewAction = Exclude<GuardReviewAction, 'node_exclude'> | 'exclude'
+const ACTIONS: ReviewAction[] = ['watch', 'clear', 'restrict_recommended', 'restrict', 'exclude', 'release']
+const ACTION_OPTIONS = ACTIONS.map((value) => ({
+  value,
+  label: value === 'exclude' ? '节点排除' : REVIEW_ACTION_TEXT[value],
+}))
 /** 未被限制的用户没有「解除限制」可选；当前已选中 release 时保留它（解除成功后关闭动画里 restricted 已变为 false） */
-const actionOptions = (restricted: boolean | undefined, current: GuardReviewAction) =>
+const actionOptions = (restricted: boolean | undefined, current: ReviewAction) =>
   restricted || current === 'release' ? ACTION_OPTIONS : ACTION_OPTIONS.filter((option) => option.value !== 'release')
 
 /** 原因的最少字数（与后端一致：限制 12，其余 8）与上限；字数按码点算，与后端 mb_strlen 一致 */
-const REASON_MIN: Record<GuardReviewAction, number> = {
+const REASON_MIN: Record<ReviewAction, number> = {
   watch: 8,
   clear: 8,
   restrict_recommended: 8,
   restrict: 12,
+  exclude: 8,
   release: 8,
 }
 const REASON_MAX = 1000
-const REASON_EXAMPLE: Record<GuardReviewAction, string> = {
+const REASON_EXAMPLE: Record<ReviewAction, string> = {
   watch: '短时间内多个 IP 频繁拉取订阅，先观察',
   clear: '已与用户确认为多设备自用',
   restrict_recommended: '订阅疑似外泄，建议限制',
   restrict: '订阅已在公开渠道流传，限制后观察投诉情况',
+  exclude: '该用户需要排除指定节点',
   release: '用户已更换订阅并说明情况，解除限制',
 }
-const placeholder = (action: GuardReviewAction) => `至少 ${REASON_MIN[action]} 个字，例如：${REASON_EXAMPLE[action]}`
+const placeholder = (action: ReviewAction) => `至少 ${REASON_MIN[action]} 个字，例如：${REASON_EXAMPLE[action]}`
+
+function ExcludedNodeSelect({ value, onChange }: { value: string[]; onChange: (value: string[]) => void }) {
+  const { options, loading, loaded } = useNodeOptions()
+  const known = new Set(options.map((option) => option.value))
+  const missing: NodeOption[] = value
+    .filter((key) => !known.has(key))
+    .map((key) => ({
+      value: key,
+      label: `${key}（节点不可用）`,
+      search: key.toLowerCase(),
+    }))
+  return (
+    <>
+      <Select<string[], NodeOption>
+        mode="multiple"
+        maxCount={100}
+        style={{ width: '100%' }}
+        placeholder="选择不下发的节点"
+        showSearch
+        loading={loading}
+        value={value}
+        options={[...options, ...missing]}
+        filterOption={filterNodeOption}
+        onChange={onChange}
+      />
+      {!loaded && !loading && <Note>节点列表读取失败，请关闭后重试。</Note>}
+      {loaded && missing.length > 0 && (
+        <Note>部分已选节点不在节点列表中，请确认节点状态；已删除的节点需移除后才能保存。</Note>
+      )}
+    </>
+  )
+}
 
 export interface ReviewUser {
   id: number
   email?: string | null
-  /** 当前是否被限制（拉订阅时下发假入口） */
+  /** 当前是否处于任一限制中 */
   restricted?: boolean
   /** 一行风险摘要，例如「最近 1 小时：评分 25，订阅 30 次，IP 2 个」 */
   summary?: string
@@ -53,10 +101,22 @@ interface ReviewModalProps {
 
 export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
   const [visible, setVisible] = useState(false)
-  const [action, setAction] = useState<GuardReviewAction>('watch')
+  const [action, setAction] = useState<ReviewAction>('watch')
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [excluded, setExcluded] = useState<string[]>([])
+  const detail = useQuery({
+    queryKey: [...guardKeys.userDetail, user.id],
+    queryFn: () => unwrap(fetchGuardUserDetail(user.id)),
+    enabled: visible,
+  })
+  const currentRestriction = detail.data?.restriction
+  const canChangeRestriction =
+    !detail.isFetching &&
+    !detail.isError &&
+    !!detail.data &&
+    (!currentRestriction || currentRestriction.mode === 'decoy' || currentRestriction.mode === 'exclude')
 
   const close = () => setVisible(false)
   /** 关闭动画结束后再重置，避免关闭过程中内容跳变 */
@@ -64,6 +124,7 @@ export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
     setAction('watch')
     setReason('')
     setConfirmed(false)
+    setExcluded([])
   }
 
   const submit = async () => {
@@ -71,18 +132,30 @@ export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
     const length = [...text].length
     if (length < REASON_MIN[action]) return message.error(`原因至少 ${REASON_MIN[action]} 个字`)
     if (length > REASON_MAX) return message.error(`原因不能超过 ${REASON_MAX} 字`)
+    if ((action === 'restrict' || action === 'exclude') && !canChangeRestriction)
+      return message.error('当前限制状态尚未获取，请稍后重试')
     if (action === 'restrict' && !confirmed) return message.error('请先勾选确认限制')
+    if (action === 'exclude' && excluded.length === 0) return message.error('请选择至少一个要排除的节点')
     setSaving(true)
     const res =
       action === 'restrict'
         ? await restrictGuardUser({ id: user.id, reason: text })
-        : action === 'release'
-          ? await releaseGuardUser({ id: user.id, reason: text })
-          : await saveGuardReview({ id: user.id, action, reason: text })
+        : action === 'exclude'
+          ? await excludeGuardNodes({
+              id: user.id,
+              reason: text,
+              nodes: excluded.map((key) => {
+                const node = parseNodeKey(key)
+                return { node_type: node.type, node_id: node.id }
+              }),
+            })
+          : action === 'release'
+            ? await releaseGuardUser({ id: user.id, reason: text })
+            : await saveGuardReview({ id: user.id, action, reason: text })
     setSaving(false)
     if (res.code !== 200 || res.data !== true) return
     message.success(
-      action === 'restrict'
+      action === 'restrict' || action === 'exclude'
         ? '已限制，下次拉取订阅或 App 配置生效'
         : action === 'release'
           ? '已解除限制'
@@ -120,7 +193,7 @@ export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
           <div>
             {userLabel(user.email, user.id)}
             {user.email && <span style={MUTED}> #{user.id}</span>}
-            {user.restricted ? (
+            {(detail.data ? currentRestriction !== null : user.restricted) ? (
               <Tag color="red" style={{ marginLeft: 8 }}>
                 已限制
               </Tag>
@@ -132,17 +205,41 @@ export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
         </FormGroup>
         <FormGroup label="动作">
           <div>
-            <Select<GuardReviewAction>
+            <Select<ReviewAction>
               style={{ width: '100%' }}
               value={action}
-              options={actionOptions(user.restricted, action)}
+              options={actionOptions(detail.data ? currentRestriction !== null : user.restricted, action).map(
+                (option) => ({
+                  ...option,
+                  disabled: (option.value === 'restrict' || option.value === 'exclude') && !canChangeRestriction,
+                }),
+              )}
               onChange={(value) => {
                 setAction(value)
                 setConfirmed(false)
+                if (value === 'exclude')
+                  setExcluded(
+                    (currentRestriction?.excluded_nodes ?? []).map((node) =>
+                      nodeKey({ type: node.node_type, id: node.node_id }),
+                    ),
+                  )
               }}
             />
           </div>
         </FormGroup>
+        {detail.isFetching && <Note style={{ marginBottom: 12 }}>正在读取当前限制状态…</Note>}
+        {detail.isError && <Note style={{ marginBottom: 12 }}>当前限制状态读取失败，请关闭后重试。</Note>}
+        {currentRestriction && (
+          <Note style={{ marginBottom: 12 }}>
+            当前限制：
+            {currentRestriction.mode === 'exclude'
+              ? '节点排除'
+              : currentRestriction.mode === 'decoy'
+                ? '下发假入口'
+                : '类型未获取'}
+            。
+          </Note>
+        )}
         {action === 'restrict' && (
           <div className="alert alert-warning" role="alert" style={{ marginBottom: 16 }}>
             <p className="mb-2">
@@ -155,8 +252,23 @@ export function ReviewModal({ user, onSaved, children }: ReviewModalProps) {
             </Checkbox>
           </div>
         )}
+        {action === 'exclude' && (
+          <>
+            <FormGroup label="排除节点">
+              <ExcludedNodeSelect value={excluded} onChange={setExcluded} />
+              <Note>
+                最多选择 100 个节点。选中的节点不会下发；其他节点正常下发。已缓存的旧配置及现有连接不会被主动撤回。
+              </Note>
+            </FormGroup>
+          </>
+        )}
+        {currentRestriction &&
+          ((action === 'exclude' && currentRestriction.mode === 'decoy') ||
+            (action === 'restrict' && currentRestriction.mode === 'exclude')) && (
+            <Note style={{ marginBottom: 16 }}>保存后将替换当前限制，两种限制不能同时生效。</Note>
+          )}
         {action === 'restrict' && user.restricted && (
-          <Note style={{ marginBottom: 16 }}>该用户已处于限制中，这次只会更新原因并再记一条审核记录。</Note>
+          <Note style={{ marginBottom: 16 }}>保存后会更新限制并再记一条审核记录。</Note>
         )}
         <FormGroup label="原因">
           <Input.TextArea

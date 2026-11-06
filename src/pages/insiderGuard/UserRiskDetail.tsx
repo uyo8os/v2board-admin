@@ -150,7 +150,17 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
                 </span>
                 <span>
                   <span style={MUTED}>限制状态：</span>
-                  {data.restriction ? <Tag color="red">已限制</Tag> : <Tag>未限制</Tag>}
+                  {data.restriction ? (
+                    <Tag color="red">
+                      {data.restriction.mode === 'exclude'
+                        ? '节点排除'
+                        : data.restriction.mode === 'decoy'
+                          ? '假入口限制'
+                          : '限制类型未获取'}
+                    </Tag>
+                  ) : (
+                    <Tag>未限制</Tag>
+                  )}
                 </span>
               </div>
               {data.restriction && (
@@ -159,7 +169,21 @@ export function UserRiskDetail({ initialUserId, onReviewed }: UserRiskDetailProp
                     限制于 {guardTime(data.restriction.created_at)} · 管理员 #{data.restriction.admin_id ?? '-'}
                   </div>
                   <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>原因：{data.restriction.reason}</div>
-                  <div>订阅与 App 配置节点入口为假地址 {data.restriction.decoy_host}</div>
+                  {data.restriction.mode === 'exclude' ? (
+                    <div>
+                      排除节点：
+                      {data.restriction.excluded_nodes.map((node) => (
+                        <NodeLabel
+                          key={`${node.node_type}:${node.node_id}`}
+                          type={node.node_type}
+                          id={node.node_id}
+                          name={node.node_name}
+                        />
+                      ))}
+                    </div>
+                  ) : data.restriction.mode === 'decoy' ? (
+                    <div>订阅与 App 配置节点入口为假地址 {data.restriction.decoy_host}</div>
+                  ) : null}
                 </Note>
               )}
               <div className="d-flex flex-wrap" style={{ marginBottom: 16 }}>
