@@ -7,6 +7,7 @@ import type {
   GuardHours,
   GuardOverview,
   GuardReviewAction,
+  GuardRestriction,
   GuardRiskUser,
   GuardTimeline,
   GuardUserDetail,
@@ -30,6 +31,9 @@ const guardGet = <T>(name: string, params?: object) =>
 export const fetchGuardOverview = () => guardGet<GuardOverview>('overview')
 /** 风险用户：按时段统计订阅次数与来源 IP 数并评分（响应顶层另有 hours / threshold） */
 export const fetchGuardUsers = (hours: GuardHours) => guardGet<GuardRiskUser[]>('users', { hours })
+/** 当前受限账号（服务端分页，顶层 total） */
+export const fetchGuardRestrictions = (params: { current: number; pageSize: number }) =>
+  guardGet<GuardRestriction[]>('restrictions', params)
 /** 事件列表（服务端分页，顶层 total），可按用户 ID、事件类型筛选 */
 export const fetchGuardEvents = (params: {
   current: number

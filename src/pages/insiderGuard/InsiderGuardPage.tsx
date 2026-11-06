@@ -16,12 +16,13 @@ import { GuardSettings } from './GuardSettings'
 import { NodeIncidents } from './NodeIncidents'
 import { OverviewCards } from './OverviewCards'
 import { RecentEvents } from './RecentEvents'
+import { Restrictions } from './Restrictions'
 import { RiskUsers } from './RiskUsers'
 import { SubscribeAudit } from './SubscribeAudit'
 import { guardKeys, hoursLabel, Note, useGuardUsers } from './shared'
 import { UserRiskDetail } from './UserRiskDetail'
 
-type TabKey = 'overview' | 'events' | 'subscribeAudit' | 'incidents' | 'detail' | 'settings'
+type TabKey = 'overview' | 'events' | 'subscribeAudit' | 'incidents' | 'detail' | 'restrictions' | 'settings'
 
 /** 标签页内容区：与系统配置页一样放在 block-content 里（有内边距） */
 function Pane({ children }: { children: ReactNode }) {
@@ -48,6 +49,7 @@ export default function InsiderGuardPage() {
   const changeTab = (key: TabKey) => {
     setTab(key)
     if (key === 'overview') void refreshOverview()
+    if (key === 'restrictions') void queryClient.invalidateQueries({ queryKey: guardKeys.restrictions })
   }
 
   const showDetail = (userId: number) => {
@@ -59,6 +61,7 @@ export default function InsiderGuardPage() {
     void refetchUserDetail()
     // 限制 / 解除后风险用户表的「已限制」标记要变
     void queryClient.invalidateQueries({ queryKey: guardKeys.usersAll })
+    void queryClient.invalidateQueries({ queryKey: guardKeys.restrictions })
   }
 
   const items: V2TabItem[] = [
@@ -123,6 +126,15 @@ export default function InsiderGuardPage() {
       children: (
         <Pane>
           <UserRiskDetail key={detailTarget.seq} initialUserId={detailTarget.userId} onReviewed={reviewed} />
+        </Pane>
+      ),
+    },
+    {
+      key: 'restrictions',
+      label: '限制管理',
+      children: (
+        <Pane>
+          <Restrictions onDetail={showDetail} onReviewed={reviewed} />
         </Pane>
       ),
     },

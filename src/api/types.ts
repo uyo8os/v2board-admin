@@ -460,6 +460,13 @@ export interface QueueWorkload {
 }
 
 // 以下为风控中心（insiderGuard/*）的类型：节点一律用 node_type + node_id 标识，时间为 unix 秒
+export interface GuardRestriction {
+  user_id: number
+  email: string | null
+  admin_id: number | null
+  reason: string
+  created_at: number
+}
 
 /** 节点异常记录；node_name 由后端按节点列表解析（overview、candidates、timeline 里都有） */
 export interface GuardIncident {
