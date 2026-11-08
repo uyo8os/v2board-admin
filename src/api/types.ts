@@ -65,6 +65,8 @@ export interface Notice {
   show: number
   img_url: string | null
   tags: string[] | null
+  auto_popup: boolean | 0 | 1
+  popup_interval: number | null
   created_at: number
   updated_at: number
 }

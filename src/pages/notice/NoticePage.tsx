@@ -1,6 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Divider, Input, Modal, Select, Switch, type TableColumnsType } from 'antd'
+import { App, Button, Divider, Input, InputNumber, Modal, Select, Switch, type TableColumnsType } from 'antd'
 import { useState } from 'react'
 import { unwrap } from '@/api/request'
 import { dropNotice, fetchNotices, saveNotice, toggleNoticeShow } from '@/api/services/notice'
@@ -15,24 +15,30 @@ import { formatTime } from '@/utils/format'
 
 // 公告管理（原版模块 JZE9 + model lETv）
 export default function NoticePage() {
+  const { message } = App.useApp()
   const queryClient = useQueryClient()
   const { data: notices = [], isFetching } = useQuery({
     queryKey: ['notice', 'list'],
     queryFn: () => unwrap(fetchNotices()),
   })
   const [visible, setVisible] = useState(false)
-  const [submit, setSubmit] = useState<Partial<Notice>>({})
+  const [submit, setSubmit] = useState<Partial<Notice>>({ auto_popup: false, popup_interval: 24 })
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: ['notice', 'list'] })
 
   const toggleModal = () => {
     const next = !visible
     setVisible(next)
-    if (!next) setSubmit({})
+    if (!next) setSubmit({ auto_popup: false, popup_interval: 24 })
   }
 
   const save = async () => {
-    const res = await saveNotice({ ...submit })
+    const interval = submit.popup_interval
+    if ((submit.auto_popup && interval == null) || (interval != null && (!Number.isInteger(interval) || interval < 1 || interval > 8760))) {
+      void message.error('弹出间隔必须是 1 至 8760 之间的整数小时')
+      return
+    }
+    const res = await saveNotice({ ...submit, popup_interval: interval ?? 24 })
     if (res.code !== 200) return
     void refetch()
     toggleModal()
@@ -74,11 +80,11 @@ export default function NoticePage() {
       key: 'action',
       align: 'right',
       fixed: 'right',
-      render: (_: unknown, record, index) => (
+      render: (_: unknown, record) => (
         <div>
           <JsLink
             onClick={() => {
-              setSubmit(notices[index] ?? record)
+              setSubmit({ ...record, auto_popup: Boolean(record.auto_popup), popup_interval: record.popup_interval ?? 24 })
               setVisible(true)
             }}
           >
@@ -143,6 +149,26 @@ export default function NoticePage() {
               placeholder="请输入图片URL"
               value={submit.img_url ?? undefined}
               onChange={(e) => setSubmit({ ...submit, img_url: e.target.value })}
+            />
+          </FormGroup>
+          <FormGroup label="自动弹出">
+            <div>
+              <Switch
+                checked={Boolean(submit.auto_popup)}
+                onChange={(auto_popup) => setSubmit({ ...submit, auto_popup })}
+              />
+            </div>
+            <small className="text-muted">从最新 5 条已显示的公告中，自动弹出第一条开启此设置的公告。间隔按用户、公告及其更新时间分别计算。</small>
+          </FormGroup>
+          <FormGroup label="弹出间隔（小时）">
+            <InputNumber
+              min={1}
+              max={8760}
+              precision={0}
+              addonAfter="小时"
+              style={{ width: '100%' }}
+              value={submit.popup_interval}
+              onChange={(popup_interval) => setSubmit({ ...submit, popup_interval })}
             />
           </FormGroup>
         </div>
