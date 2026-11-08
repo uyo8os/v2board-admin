@@ -177,7 +177,7 @@ export default function UserPage() {
         resetAt === undefined ? (
           <Tooltip title="接口未返回重置时间">未获取</Tooltip>
         ) : resetAt === null ? (
-          '—'
+          '无可重置周期'
         ) : (
           formatTime(resetAt, 'YYYY/MM/DD HH:mm:ss')
         ),
